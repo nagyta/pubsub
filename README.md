@@ -14,12 +14,16 @@ This microservice handles YouTube PubSubHubbub requests and logs new content tit
 | Content Notifications        | Processes notifications when new videos are published               |
 | XML Parsing                  | Parses YouTube's Atom XML feed format                              |
 | Title Logging                | Logs the title of newly published videos                            |
+| Subscription Persistence     | Stores subscription data in a database for management               |
+| Notification Queueing        | Queues notifications for reliable processing                        |
+| Caching                      | Caches frequently accessed data for improved performance            |
 
 ## Endpoints
 
 - `GET /` - Home page
 - `GET /pubsub/youtube` - Handles subscription verification
 - `POST /pubsub/youtube` - Receives content notifications
+- `GET /api/subscriptions` - Retrieves all active subscriptions
 
 ## Setting Up YouTube PubSubHubbub Subscriptions
 
