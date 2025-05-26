@@ -43,10 +43,10 @@ class NotificationConsumerService : CoroutineScope {
             logger.info("Initializing NotificationConsumerService")
 
             val factory = ConnectionFactory()
-            factory.host = "localhost"
-            factory.port = 5672
-            factory.username = "guest"
-            factory.password = "guest"
+            factory.host = System.getenv("RABBITMQ_HOST") ?: "localhost"
+            factory.port = System.getenv("RABBITMQ_PORT")?.toIntOrNull() ?: 5672
+            factory.username = System.getenv("RABBITMQ_USERNAME") ?: "guest"
+            factory.password = System.getenv("RABBITMQ_PASSWORD") ?: "guest"
 
             connection = factory.newConnection()
             channel = connection?.createChannel()

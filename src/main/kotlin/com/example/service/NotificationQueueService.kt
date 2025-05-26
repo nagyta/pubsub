@@ -32,10 +32,10 @@ class NotificationQueueService {
             logger.info("Initializing RabbitMQ connection")
 
             val factory = ConnectionFactory()
-            factory.host = "localhost"
-            factory.port = 5672
-            factory.username = "guest"
-            factory.password = "guest"
+            factory.host = System.getenv("RABBITMQ_HOST") ?: "localhost"
+            factory.port = System.getenv("RABBITMQ_PORT")?.toIntOrNull() ?: 5672
+            factory.username = System.getenv("RABBITMQ_USERNAME") ?: "guest"
+            factory.password = System.getenv("RABBITMQ_PASSWORD") ?: "guest"
 
             connection = factory.newConnection()
             channel = connection?.createChannel()
@@ -94,6 +94,25 @@ class NotificationQueueService {
             logger.error("Error closing RabbitMQ connection: ${e.message}", e)
         } catch (e: TimeoutException) {
             logger.error("Timeout closing RabbitMQ connection: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Check if the RabbitMQ connection is available.
+     *
+     * @return True if the connection is available, false otherwise
+     */
+    fun isAvailable(): Boolean {
+        return try {
+            if (channel == null || !channel!!.isOpen) {
+                logger.warn("Channel is not open, attempting to reconnect")
+                init()
+            }
+
+            channel != null && channel!!.isOpen
+        } catch (e: Exception) {
+            logger.error("Error checking RabbitMQ availability: ${e.message}", e)
+            false
         }
     }
 }

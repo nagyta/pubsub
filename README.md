@@ -17,6 +17,7 @@ This microservice handles YouTube PubSubHubbub requests and logs new content tit
 | Subscription Persistence     | Stores subscription data in a database for management               |
 | Notification Queueing        | Queues notifications for reliable processing                        |
 | Notification Processing      | Consumes and processes notifications from the queue (Phase 3)       |
+| Containerization             | Docker and Docker Compose support for easy deployment (Phase 3)     |
 | Caching                      | Caches frequently accessed data for improved performance            |
 
 ## Endpoints
@@ -69,6 +70,54 @@ INFO  Application - Application started in 0.303 seconds.
 INFO  Application - Responding at http://0.0.0.0:8080
 ```
 
+## Docker Containerization (Phase 3)
+
+As part of Phase 3, the application has been containerized to facilitate deployment and scaling in cloud environments.
+
+### Using Docker
+
+To build and run the application using Docker:
+
+```bash
+# Build the Docker image
+docker build -t pubsub-service .
+
+# Run the container
+docker run -p 8080:8080 -e RABBITMQ_HOST=localhost pubsub-service
+```
+
+### Using Docker Compose
+
+For a complete environment with RabbitMQ:
+
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+The docker-compose.yml file includes:
+- The application service
+- RabbitMQ with management UI (accessible at http://localhost:15672)
+- Persistent volumes for both services
+
+### Environment Variables
+
+The following environment variables can be configured:
+
+| Variable            | Description                   | Default Value      |
+|---------------------|-------------------------------|-------------------|
+| RABBITMQ_HOST       | RabbitMQ server hostname      | localhost         |
+| RABBITMQ_PORT       | RabbitMQ server port          | 5672              |
+| RABBITMQ_USERNAME   | RabbitMQ username             | guest             |
+| RABBITMQ_PASSWORD   | RabbitMQ password             | guest             |
+| H2_DB_PATH          | H2 database file path         | ./build/pubsub-db |
+
 ## Logs
 
 When a new video is published, you'll see a log entry like:
@@ -113,6 +162,6 @@ this project is a microservice that handles youtube pubsubhubbub requests and lo
 ## Summary
 A microservice was successfully implemented to handle YouTube PubSubHubbub requests, logging new content titles. The project structure was established with necessary Ktor plugins, and all functionalities were implemented without errors, including subscription verification and content notification handling. 
 
-Phase 3 added a notification consumer service that processes notifications from the queue, with API endpoints to check and control its status. This completes the end-to-end flow from receiving notifications to processing them asynchronously.
+Phase 3 added a notification consumer service that processes notifications from the queue, with API endpoints to check and control its status. Additionally, Phase 3 implemented containerization with Docker and Docker Compose, making the application easier to deploy and scale. The application now supports environment variables for configuration, allowing for flexible deployment in different environments.
 
 The application built successfully, confirming that there are no compilation issues.

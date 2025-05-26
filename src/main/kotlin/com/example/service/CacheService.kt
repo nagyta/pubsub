@@ -14,17 +14,17 @@ import java.time.Duration
 class CacheService {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private var cacheManager: CacheManager? = null
-    
+
     /**
      * Initialize the cache manager.
      */
     fun init() {
         try {
             logger.info("Initializing cache manager")
-            
+
             cacheManager = CacheManagerBuilder.newCacheManagerBuilder()
                 .build(true)
-            
+
             // Create subscription cache
             cacheManager?.createCache("subscriptions", 
                 CacheConfigurationBuilder.newCacheConfigurationBuilder(
@@ -35,13 +35,13 @@ class CacheService {
                 .withExpiry(ExpiryPolicyBuilder.timeToLiveExpiration(Duration.ofMinutes(10)))
                 .build()
             )
-            
+
             logger.info("Cache manager initialized")
         } catch (e: Exception) {
             logger.error("Error initializing cache manager: ${e.message}", e)
         }
     }
-    
+
     /**
      * Get a value from the cache.
      *
@@ -57,7 +57,7 @@ class CacheService {
             null
         }
     }
-    
+
     /**
      * Put a value in the cache.
      *
@@ -72,7 +72,7 @@ class CacheService {
             logger.error("Error putting in cache: ${e.message}", e)
         }
     }
-    
+
     /**
      * Remove a value from the cache.
      *
@@ -86,7 +86,7 @@ class CacheService {
             logger.error("Error removing from cache: ${e.message}", e)
         }
     }
-    
+
     /**
      * Clear a cache.
      *
@@ -99,7 +99,7 @@ class CacheService {
             logger.error("Error clearing cache: ${e.message}", e)
         }
     }
-    
+
     /**
      * Close the cache manager.
      */
@@ -109,6 +109,27 @@ class CacheService {
             logger.info("Cache manager closed")
         } catch (e: Exception) {
             logger.error("Error closing cache manager: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Check if the cache is available.
+     *
+     * @return True if the cache is available, false otherwise
+     */
+    fun isAvailable(): Boolean {
+        return try {
+            if (cacheManager == null) {
+                logger.warn("Cache manager is not initialized, attempting to initialize")
+                init()
+            }
+
+            // Try to get a cache to verify it's working
+            val cache = cacheManager?.getCache("subscriptions", String::class.java, Any::class.java)
+            cache != null
+        } catch (e: Exception) {
+            logger.error("Error checking cache availability: ${e.message}", e)
+            false
         }
     }
 }

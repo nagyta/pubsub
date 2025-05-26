@@ -68,8 +68,9 @@ private fun initDatabase() {
     logger.info("Initializing database connection")
 
     // Connect to H2 database
+    val dbPath = System.getenv("H2_DB_PATH") ?: "./build/pubsub-db"
     Database.connect(
-        url = "jdbc:h2:file:./build/pubsub-db;DB_CLOSE_DELAY=-1",
+        url = "jdbc:h2:file:$dbPath;DB_CLOSE_DELAY=-1",
         driver = "org.h2.Driver"
     )
 
