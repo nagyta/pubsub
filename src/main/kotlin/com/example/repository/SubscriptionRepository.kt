@@ -96,27 +96,32 @@ class SubscriptionRepository {
      * @return The subscription or null if not found
      */
     fun getSubscription(channelId: String): Subscription? {
-        // Try to get from cache first
-        val cachedSubscription = cacheService.get<Subscription>("subscriptions", "subscription:$channelId")
-        if (cachedSubscription != null) {
-            logger.debug("Cache hit for subscription: $channelId")
-            return cachedSubscription
-        }
+        try {
+            // Try to get from cache first
+            val cachedSubscription = cacheService.get<Subscription>("subscriptions", "subscription:$channelId")
+            if (cachedSubscription != null) {
+                logger.debug("Cache hit for subscription: $channelId")
+                return cachedSubscription
+            }
 
-        // If not in cache, get from database
-        logger.debug("Cache miss for subscription: $channelId, fetching from database")
-        val subscription = transaction {
-            SubscriptionEntity.find { 
-                SubscriptionsTable.channelId eq channelId 
-            }.firstOrNull()?.toSubscription()
-        }
+            // If not in cache, get from database
+            logger.debug("Cache miss for subscription: $channelId, fetching from database")
+            val subscription = transaction {
+                SubscriptionEntity.find { 
+                    SubscriptionsTable.channelId eq channelId 
+                }.firstOrNull()?.toSubscription()
+            }
 
-        // Store in cache if found
-        if (subscription != null) {
-            cacheService.put("subscriptions", "subscription:$channelId", subscription)
-        }
+            // Store in cache if found
+            if (subscription != null) {
+                cacheService.put("subscriptions", "subscription:$channelId", subscription)
+            }
 
-        return subscription
+            return subscription
+        } catch (e: Exception) {
+            logger.error("Error getting subscription for channel $channelId: ${e.message}", e)
+            return null
+        }
     }
 
     /**
@@ -126,26 +131,31 @@ class SubscriptionRepository {
      * @return List of active subscriptions
      */
     fun getAllActiveSubscriptions(): List<Subscription> {
-        // Try to get from cache first
-        val cachedSubscriptions = cacheService.get<List<Subscription>>("subscriptions", "all_active_subscriptions")
-        if (cachedSubscriptions != null) {
-            logger.debug("Cache hit for all active subscriptions")
-            return cachedSubscriptions
+        try {
+            // Try to get from cache first
+            val cachedSubscriptions = cacheService.get<List<Subscription>>("subscriptions", "all_active_subscriptions")
+            if (cachedSubscriptions != null) {
+                logger.debug("Cache hit for all active subscriptions")
+                return cachedSubscriptions
+            }
+
+            // If not in cache, get from database
+            logger.debug("Cache miss for all active subscriptions, fetching from database")
+            val subscriptions = transaction {
+                SubscriptionEntity.find { 
+                    SubscriptionsTable.status eq "active" 
+                }.map { it.toSubscription() }
+            }
+
+            // Store in cache
+            cacheService.put("subscriptions", "all_active_subscriptions", subscriptions)
+            logger.debug("Updated cache for all active subscriptions: ${subscriptions.size} subscriptions")
+
+            return subscriptions
+        } catch (e: Exception) {
+            logger.error("Error getting all active subscriptions: ${e.message}", e)
+            return emptyList()
         }
-
-        // If not in cache, get from database
-        logger.debug("Cache miss for all active subscriptions, fetching from database")
-        val subscriptions = transaction {
-            SubscriptionEntity.find { 
-                SubscriptionsTable.status eq "active" 
-            }.map { it.toSubscription() }
-        }
-
-        // Store in cache
-        cacheService.put("subscriptions", "all_active_subscriptions", subscriptions)
-        logger.debug("Updated cache for all active subscriptions: ${subscriptions.size} subscriptions")
-
-        return subscriptions
     }
 
     /**
@@ -156,30 +166,35 @@ class SubscriptionRepository {
      * @return List of subscriptions that will expire within the threshold
      */
     fun getExpiringSubscriptions(expiryThreshold: Long): List<Subscription> {
-        val thresholdDateTime = LocalDateTime.now().plusSeconds(expiryThreshold)
-        val cacheKey = "expiring_subscriptions:$expiryThreshold"
+        try {
+            val thresholdDateTime = LocalDateTime.now().plusSeconds(expiryThreshold)
+            val cacheKey = "expiring_subscriptions:$expiryThreshold"
 
-        // Try to get from cache first
-        val cachedSubscriptions = cacheService.get<List<Subscription>>("subscriptions", cacheKey)
-        if (cachedSubscriptions != null) {
-            logger.debug("Cache hit for expiring subscriptions with threshold: $expiryThreshold")
-            return cachedSubscriptions
+            // Try to get from cache first
+            val cachedSubscriptions = cacheService.get<List<Subscription>>("subscriptions", cacheKey)
+            if (cachedSubscriptions != null) {
+                logger.debug("Cache hit for expiring subscriptions with threshold: $expiryThreshold")
+                return cachedSubscriptions
+            }
+
+            // If not in cache, get from database
+            logger.debug("Cache miss for expiring subscriptions, fetching from database")
+            val subscriptions = transaction {
+                SubscriptionEntity.find { 
+                    (SubscriptionsTable.status eq "active") and
+                    (SubscriptionsTable.expiresAt lessEq thresholdDateTime)
+                }.map { it.toSubscription() }
+            }
+
+            // Store in cache with a shorter expiry time since this data changes frequently
+            cacheService.put("subscriptions", cacheKey, subscriptions)
+            logger.debug("Updated cache for expiring subscriptions: ${subscriptions.size} subscriptions")
+
+            return subscriptions
+        } catch (e: Exception) {
+            logger.error("Error getting expiring subscriptions with threshold $expiryThreshold: ${e.message}", e)
+            return emptyList()
         }
-
-        // If not in cache, get from database
-        logger.debug("Cache miss for expiring subscriptions, fetching from database")
-        val subscriptions = transaction {
-            SubscriptionEntity.find { 
-                (SubscriptionsTable.status eq "active") and
-                (SubscriptionsTable.expiresAt lessEq thresholdDateTime)
-            }.map { it.toSubscription() }
-        }
-
-        // Store in cache with a shorter expiry time since this data changes frequently
-        cacheService.put("subscriptions", cacheKey, subscriptions)
-        logger.debug("Updated cache for expiring subscriptions: ${subscriptions.size} subscriptions")
-
-        return subscriptions
     }
 
     /**
@@ -191,32 +206,37 @@ class SubscriptionRepository {
      * @return True if the subscription was updated, false otherwise
      */
     fun updateSubscriptionStatus(channelId: String, status: String): Boolean {
-        val updatedSubscription = transaction {
-            val subscription = SubscriptionEntity.find { 
-                SubscriptionsTable.channelId eq channelId 
-            }.firstOrNull()
+        try {
+            val updatedSubscription = transaction {
+                val subscription = SubscriptionEntity.find { 
+                    SubscriptionsTable.channelId eq channelId 
+                }.firstOrNull()
 
-            if (subscription != null) {
-                subscription.status = status
-                subscription.updatedAt = LocalDateTime.now()
-                subscription.toSubscription()
-            } else {
-                null
+                if (subscription != null) {
+                    subscription.status = status
+                    subscription.updatedAt = LocalDateTime.now()
+                    subscription.toSubscription()
+                } else {
+                    null
+                }
             }
+
+            val updated = updatedSubscription != null
+
+            if (updated) {
+                // Update the cache with the updated subscription
+                cacheService.put("subscriptions", "subscription:$channelId", updatedSubscription)
+                logger.debug("Updated cache for subscription status: $channelId -> $status")
+
+                // Invalidate all_active_subscriptions cache since we've modified a subscription's status
+                cacheService.remove("subscriptions", "all_active_subscriptions")
+                logger.debug("Invalidated all_active_subscriptions cache")
+            }
+
+            return updated
+        } catch (e: Exception) {
+            logger.error("Error updating subscription status for channel $channelId: ${e.message}", e)
+            return false
         }
-
-        val updated = updatedSubscription != null
-
-        if (updated) {
-            // Update the cache with the updated subscription
-            cacheService.put("subscriptions", "subscription:$channelId", updatedSubscription)
-            logger.debug("Updated cache for subscription status: $channelId -> $status")
-
-            // Invalidate all_active_subscriptions cache since we've modified a subscription's status
-            cacheService.remove("subscriptions", "all_active_subscriptions")
-            logger.debug("Invalidated all_active_subscriptions cache")
-        }
-
-        return updated
     }
 }

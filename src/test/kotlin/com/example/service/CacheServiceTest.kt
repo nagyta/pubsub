@@ -155,4 +155,122 @@ class CacheServiceTest {
         // The put method expects a non-null value (Any), and trying to cast null to Any
         // results in a NullPointerException
     }
+
+    /**
+     * Test error handling in the init method.
+     * This test verifies that the init method handles errors gracefully.
+     */
+    @Test
+    fun testInitErrorHandling() {
+        // Create a service that's already initialized
+        val service = CacheService()
+        service.init()
+
+        try {
+            // Call init again (it should handle the case where it's already initialized)
+            service.init()
+
+            // If we got here, the test passed because the method handled the error gracefully
+        } catch (e: Exception) {
+            Assert.fail("Init method should handle errors gracefully: ${e.message}")
+        } finally {
+            service.close()
+        }
+    }
+
+    /**
+     * Test error handling in the close method.
+     * This test verifies that the close method handles errors gracefully.
+     */
+    @Test
+    fun testCloseErrorHandling() {
+        // Create a service that's not initialized
+        val service = CacheService()
+
+        try {
+            // Call close without initializing (it should handle this case gracefully)
+            service.close()
+
+            // If we got here, the test passed because the method handled the error gracefully
+        } catch (e: Exception) {
+            Assert.fail("Close method should handle errors gracefully: ${e.message}")
+        }
+    }
+
+    /**
+     * Test error handling in the put method.
+     * This test verifies that the put method handles errors gracefully.
+     */
+    @Test
+    fun testPutErrorHandling() {
+        // Create a service that's not initialized
+        val service = CacheService()
+
+        try {
+            // Call put without initializing (it should handle this case gracefully)
+            service.put("test", "key", "value")
+
+            // If we got here, the test passed because the method handled the error gracefully
+        } catch (e: Exception) {
+            Assert.fail("Put method should handle errors gracefully: ${e.message}")
+        }
+    }
+
+    /**
+     * Test error handling in the get method.
+     * This test verifies that the get method handles errors gracefully.
+     */
+    @Test
+    fun testGetErrorHandling() {
+        // Create a service that's not initialized
+        val service = CacheService()
+
+        try {
+            // Call get without initializing (it should handle this case gracefully)
+            val result = service.get<String>("test", "key")
+
+            // The method should return null when an error occurs
+            Assert.assertNull(result, "Get method should return null when an error occurs")
+        } catch (e: Exception) {
+            Assert.fail("Get method should handle errors gracefully: ${e.message}")
+        }
+    }
+
+    /**
+     * Test error handling in the remove method.
+     * This test verifies that the remove method handles errors gracefully.
+     */
+    @Test
+    fun testRemoveErrorHandling() {
+        // Create a service that's not initialized
+        val service = CacheService()
+
+        try {
+            // Call remove without initializing (it should handle this case gracefully)
+            service.remove("test", "key")
+
+            // If we got here, the test passed because the method handled the error gracefully
+        } catch (e: Exception) {
+            Assert.fail("Remove method should handle errors gracefully: ${e.message}")
+        }
+    }
+
+    /**
+     * Test error handling in the clear method.
+     * This test verifies that the clear method handles errors gracefully.
+     */
+    @Test
+    fun testClearErrorHandling() {
+        // Create a service that's not initialized
+        val service = CacheService()
+
+        try {
+            // Call clear without initializing (it should handle this case gracefully)
+            service.clear("test")
+
+            // If we got here, the test passed because the method handled the error gracefully
+        } catch (e: Exception) {
+            Assert.fail("Clear method should handle errors gracefully: ${e.message}")
+        }
+    }
 }
