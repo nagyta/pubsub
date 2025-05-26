@@ -13,6 +13,10 @@ application {
     mainClass = "io.ktor.server.cio.EngineMain"
 }
 
+tasks.withType<Test> {
+    useTestNG()
+}
+
 repositories {
     mavenCentral()
 }
@@ -40,5 +44,6 @@ dependencies {
     implementation("io.ktor:ktor-client-cio")
 
     testImplementation("io.ktor:ktor-server-test-host")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+    testImplementation("org.testng:testng:7.7.1")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")
 }

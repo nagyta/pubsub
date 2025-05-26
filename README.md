@@ -49,7 +49,7 @@ To build or run the project, use one of the following tasks:
 
 | Task                          | Description                                                          |
 |-------------------------------|----------------------------------------------------------------------|
-| `./gradlew test`              | Run the tests                                                        |
+| `./gradlew test`              | Run the TestNG tests                                                 |
 | `./gradlew build`             | Build everything                                                     |
 | `./gradlew run`               | Run the server                                                       |
 | `./gradlew buildFatJar`       | Build an executable JAR with all dependencies included               |
@@ -67,6 +67,22 @@ When a new video is published, you'll see a log entry like:
 
 ```
 INFO  com.example.Routing - New YouTube content: 'Video Title' by Channel Name (ID: video_id)
+```
+
+## Tests
+
+The project uses TestNG for testing. The tests are organized into the following classes:
+
+| Test Class                    | Description                                                          |
+|-------------------------------|----------------------------------------------------------------------|
+| `ApplicationTest`             | Tests the application configuration and plugins                      |
+| `RoutingTest`                 | Tests the routing functionality and endpoints                        |
+| `YouTubeFeedTest`             | Tests the parsing of YouTube's Atom XML feed format                  |
+
+To run the tests, use the following command:
+
+```
+./gradlew test
 ```
 
 ## original Junie instructions
