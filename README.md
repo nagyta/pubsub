@@ -16,6 +16,7 @@ This microservice handles YouTube PubSubHubbub requests and logs new content tit
 | Title Logging                | Logs the title of newly published videos                            |
 | Subscription Persistence     | Stores subscription data in a database for management               |
 | Notification Queueing        | Queues notifications for reliable processing                        |
+| Notification Processing      | Consumes and processes notifications from the queue (Phase 3)       |
 | Caching                      | Caches frequently accessed data for improved performance            |
 
 ## Endpoints
@@ -24,6 +25,9 @@ This microservice handles YouTube PubSubHubbub requests and logs new content tit
 - `GET /pubsub/youtube` - Handles subscription verification
 - `POST /pubsub/youtube` - Receives content notifications
 - `GET /api/subscriptions` - Retrieves all active subscriptions
+- `GET /api/notifications/consumer/status` - Checks the status of the notification consumer (Phase 3)
+- `POST /api/notifications/consumer/start` - Starts the notification consumer (Phase 3)
+- `POST /api/notifications/consumer/stop` - Stops the notification consumer (Phase 3)
 
 ## Setting Up YouTube PubSubHubbub Subscriptions
 
@@ -107,4 +111,8 @@ this project is a microservice that handles youtube pubsubhubbub requests and lo
 12. Summarize the implementation and provide final thoughts
 
 ## Summary
-A microservice was successfully implemented to handle YouTube PubSubHubbub requests, logging new content titles. The project structure was established with necessary Ktor plugins, and all functionalities were implemented without errors, including subscription verification and content notification handling. The application built successfully, confirming that there are no compilation issues.
+A microservice was successfully implemented to handle YouTube PubSubHubbub requests, logging new content titles. The project structure was established with necessary Ktor plugins, and all functionalities were implemented without errors, including subscription verification and content notification handling. 
+
+Phase 3 added a notification consumer service that processes notifications from the queue, with API endpoints to check and control its status. This completes the end-to-end flow from receiving notifications to processing them asynchronously.
+
+The application built successfully, confirming that there are no compilation issues.

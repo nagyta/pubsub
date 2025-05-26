@@ -58,6 +58,10 @@ dependencies {
     implementation("org.ehcache:ehcache:3.10.8")
     implementation("javax.cache:cache-api:1.1.1")
 
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.7.3")
+
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.testng:testng:7.7.1")
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")

@@ -2,6 +2,7 @@ package com.example
 
 import com.example.repository.SubscriptionRepository
 import com.example.service.CacheService
+import com.example.service.NotificationConsumerService
 import com.example.service.NotificationQueueService
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule
@@ -22,6 +23,7 @@ private val logger = LoggerFactory.getLogger("com.example.Application")
 val cacheService = CacheService()
 val subscriptionRepository = SubscriptionRepository()
 val notificationQueueService = NotificationQueueService()
+val notificationConsumerService = NotificationConsumerService()
 
 fun main(args: Array<String>) {
     io.ktor.server.cio.EngineMain.main(args)
@@ -29,7 +31,7 @@ fun main(args: Array<String>) {
 
 fun Application.module() {
     // Log application startup
-    logger.info("Starting YouTube PubSubHubbub Service")
+    logger.info("Starting YouTube PubSubHubbub Service - Phase 3")
 
     // Initialize database
     initDatabase()
@@ -77,6 +79,11 @@ private fun initDatabase() {
     // Initialize services
     cacheService.init()
     notificationQueueService.init()
+    notificationConsumerService.init()
+
+    // Start consuming notifications (Phase 3)
+    notificationConsumerService.startConsuming()
+    logger.info("Notification consumer started")
 
     logger.info("Database and services initialization complete")
 }
