@@ -126,7 +126,7 @@ class RoutingTest {
         }
 
         Assert.assertEquals(response.status, HttpStatusCode.BadRequest)
-        Assert.assertTrue(response.bodyAsText().contains("Missing title in feed"))
+        Assert.assertTrue(response.bodyAsText().contains("Missing or empty title in feed"))
     }
 
     @Test
@@ -149,6 +149,89 @@ class RoutingTest {
         }
 
         Assert.assertEquals(response.status, HttpStatusCode.BadRequest)
-        Assert.assertTrue(response.bodyAsText().contains("Missing title in feed"))
+        Assert.assertTrue(response.bodyAsText().contains("Missing entry element in feed"))
+    }
+
+    @Test
+    fun testContentNotificationMissingVideoId() = testApplication {
+        application {
+            module()
+        }
+        // Sample XML with missing video ID
+        val sampleXml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <feed xmlns="http://www.w3.org/2005/Atom">
+                <entry>
+                    <!-- Missing id -->
+                    <title>Test Video Title</title>
+                    <author>
+                        <name>Test Channel</name>
+                        <uri>https://www.youtube.com/channel/UC123456789</uri>
+                    </author>
+                </entry>
+            </feed>
+        """.trimIndent()
+
+        // Test content notification with missing video ID
+        val response = client.post("/pubsub/youtube") {
+            contentType(ContentType.Application.Xml)
+            setBody(sampleXml)
+        }
+
+        Assert.assertEquals(response.status, HttpStatusCode.BadRequest)
+        Assert.assertTrue(response.bodyAsText().contains("Missing or empty video ID in feed"))
+    }
+
+    @Test
+    fun testContentNotificationEmptyTitle() = testApplication {
+        application {
+            module()
+        }
+        // Sample XML with empty title
+        val sampleXml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <feed xmlns="http://www.w3.org/2005/Atom">
+                <entry>
+                    <id>yt:video:ABC12345678</id>
+                    <title></title>
+                    <author>
+                        <name>Test Channel</name>
+                        <uri>https://www.youtube.com/channel/UC123456789</uri>
+                    </author>
+                </entry>
+            </feed>
+        """.trimIndent()
+
+        // Test content notification with empty title
+        val response = client.post("/pubsub/youtube") {
+            contentType(ContentType.Application.Xml)
+            setBody(sampleXml)
+        }
+
+        Assert.assertEquals(response.status, HttpStatusCode.BadRequest)
+        Assert.assertTrue(response.bodyAsText().contains("Missing or empty title in feed"))
+    }
+
+    @Test
+    fun testContentNotificationMissingEntry() = testApplication {
+        application {
+            module()
+        }
+        // Sample XML with missing entry
+        val sampleXml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <feed xmlns="http://www.w3.org/2005/Atom">
+                <!-- Missing entry element -->
+            </feed>
+        """.trimIndent()
+
+        // Test content notification with missing entry
+        val response = client.post("/pubsub/youtube") {
+            contentType(ContentType.Application.Xml)
+            setBody(sampleXml)
+        }
+
+        Assert.assertEquals(response.status, HttpStatusCode.BadRequest)
+        Assert.assertTrue(response.bodyAsText().contains("Missing entry element in feed"))
     }
 }

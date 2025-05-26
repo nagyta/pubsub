@@ -19,15 +19,21 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+    // Log application startup
+    logger.info("Starting YouTube PubSubHubbub Service")
+
     // Configure XML content negotiation
     install(ContentNegotiation) {
         register(ContentType.Application.Xml, JacksonConverter(createXmlMapper()))
     }
 
-    // Configure status pages for error handling
+    // Configure status pages for error handling with enhanced logging
     install(StatusPages) {
         exception<Throwable> { call, cause ->
-            logger.error("Error processing request", cause)
+            // Enhanced error logging with more context
+            logger.error("Error processing request: ${cause.message}", cause)
+
+            // Provide more detailed error response
             call.respondText(
                 text = "Internal server error: ${cause.message}",
                 status = HttpStatusCode.InternalServerError
@@ -35,7 +41,10 @@ fun Application.module() {
         }
     }
 
+    // Initialize routing with logging
+    logger.info("Configuring routing")
     configureRouting()
+    logger.info("Application initialization complete")
 }
 
 // Create XML mapper with Kotlin support
