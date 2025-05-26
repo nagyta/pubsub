@@ -107,6 +107,39 @@ The docker-compose.yml file includes:
 - RabbitMQ with management UI (accessible at http://localhost:15672)
 - Persistent volumes for both services
 
+### Scaled Deployment with Load Balancing
+
+For production environments, a scaled deployment with load balancing is available:
+
+```bash
+# Start the scaled deployment
+docker-compose -f docker-compose-scaled.yml up -d
+
+# View logs
+docker-compose -f docker-compose-scaled.yml logs -f
+
+# Stop all services
+docker-compose -f docker-compose-scaled.yml down
+```
+
+The docker-compose-scaled.yml file includes:
+- Three application instances for high availability
+- Caddy as a load balancer (reverse proxy)
+- PostgreSQL for persistent storage
+- RabbitMQ for message queuing
+- Redis for distributed caching
+- Proper networking between all services
+
+#### Caddy Configuration
+
+The project uses Caddy as a modern, efficient reverse proxy and load balancer. Caddy offers several advantages:
+- Automatic HTTPS with Let's Encrypt
+- Simple, declarative configuration
+- HTTP/2 and HTTP/3 support
+- Built-in load balancing
+
+The Caddy configuration is stored in the `Caddyfile` at the root of the project.
+
 ### Environment Variables
 
 The following environment variables can be configured:

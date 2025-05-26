@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  # Load Balancer
-  nginx:
-    image: nginx:latest
+  # Load Balancer (Caddy)
+  caddy:
+    image: caddy:2
     ports:
       - "80:80"
     depends_on:
@@ -12,37 +12,10 @@ services:
       - app-3
     networks:
       - pubsub-network
-    command: |
-      /bin/bash -c "echo 'events {
-        worker_connections 1024;
-      }
-      http {
-        upstream pubsub_backend {
-          server app-1:8080;
-          server app-2:8080;
-          server app-3:8080;
-        }
-        server {
-          listen 80;
-          location /health {
-            proxy_pass http://pubsub_backend/health;
-            proxy_set_header Host $$host;
-            proxy_set_header X-Real-IP $$remote_addr;
-            proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $$scheme;
-          }
-          location / {
-            proxy_pass http://pubsub_backend;
-            proxy_set_header Host $$host;
-            proxy_set_header X-Real-IP $$remote_addr;
-            proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $$scheme;
-            proxy_connect_timeout 5s;
-            proxy_send_timeout 30s;
-            proxy_read_timeout 30s;
-          }
-        }
-      }' > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
 
   # Application instances
   app-1:
@@ -158,3 +131,5 @@ volumes:
   postgres-data:
   rabbitmq-data:
   redis-data:
+  caddy_data:
+  caddy_config:
