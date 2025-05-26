@@ -273,4 +273,57 @@ class CacheServiceTest {
             Assert.fail("Clear method should handle errors gracefully: ${e.message}")
         }
     }
+
+    /**
+     * Test the isAvailable method when the cache is available.
+     * This test verifies that the isAvailable method returns true when the cache is available.
+     */
+    @Test
+    fun testIsAvailableWhenAvailable() {
+        // The cache is initialized in setUp, so it should be available
+        val isAvailable = cacheService.isAvailable()
+
+        // Verify the cache is available
+        Assert.assertTrue(isAvailable, "Cache should be available after initialization")
+    }
+
+    /**
+     * Test the error handling in the isAvailable method.
+     * This test verifies that the isAvailable method handles errors gracefully.
+     */
+    @Test
+    fun testIsAvailableErrorHandling() {
+        // Create a service that's not initialized
+        val service = CacheService()
+
+        try {
+            // Call isAvailable (it should handle errors gracefully)
+            val isAvailable = service.isAvailable()
+
+            // If we got here, the test passed because the method handled errors gracefully
+            // The method should return true if initialization was successful
+            Assert.assertTrue(isAvailable, "isAvailable should return true if initialization was successful")
+        } catch (e: Exception) {
+            Assert.fail("isAvailable method should handle errors gracefully: ${e.message}")
+        }
+    }
+
+    /**
+     * Test the isAvailable method when it needs to initialize the cache.
+     * This test verifies that the isAvailable method initializes the cache if it's not available.
+     */
+    @Test
+    fun testIsAvailableInitializesCache() {
+        // Create a service that's not initialized
+        val service = CacheService()
+
+        // Check if the cache is available (it should try to initialize)
+        val isAvailable = service.isAvailable()
+
+        // Verify the cache is available after initialization
+        Assert.assertTrue(isAvailable, "Cache should be available after initialization")
+
+        // Clean up
+        service.close()
+    }
 }

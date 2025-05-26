@@ -4,16 +4,22 @@ import com.example.repository.SubscriptionRepository
 import com.example.service.CacheService
 import com.example.service.NotificationConsumerService
 import com.example.service.NotificationQueueService
+import com.example.service.RateLimitService
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import io.ktor.http.*
-import io.ktor.serialization.jackson.*
-import io.ktor.server.application.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.response.*
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.serialization.jackson.JacksonConverter
+import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.call
+import io.ktor.server.application.install
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
 import org.jetbrains.exposed.sql.Database
 import org.slf4j.LoggerFactory
 
@@ -24,6 +30,7 @@ val cacheService = CacheService()
 val subscriptionRepository = SubscriptionRepository()
 val notificationQueueService = NotificationQueueService()
 val notificationConsumerService = NotificationConsumerService()
+val rateLimitService = RateLimitService()
 
 fun main(args: Array<String>) {
     io.ktor.server.cio.EngineMain.main(args)
@@ -55,6 +62,20 @@ fun Application.module() {
         }
     }
 
+    // Configure rate limiting interceptor
+    intercept(ApplicationCallPipeline.Plugins) {
+        if (!rateLimitService.checkRateLimit(call)) {
+            call.respond(
+                HttpStatusCode.TooManyRequests,
+                mapOf(
+                    "error" to "Rate limit exceeded",
+                    "message" to "Too many requests, please try again later"
+                )
+            )
+            finish()
+        }
+    }
+
     // Initialize routing with logging
     logger.info("Configuring routing")
     configureRouting()
@@ -81,6 +102,8 @@ private fun initDatabase() {
     cacheService.init()
     notificationQueueService.init()
     notificationConsumerService.init()
+    rateLimitService.init()
+    logger.info("Rate limiting service initialized")
 
     // Start consuming notifications (Phase 3)
     notificationConsumerService.startConsuming()

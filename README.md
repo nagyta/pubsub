@@ -18,6 +18,7 @@ This microservice handles YouTube PubSubHubbub requests and logs new content tit
 | Notification Queueing        | Queues notifications for reliable processing                        |
 | Notification Processing      | Consumes and processes notifications from the queue (Phase 3)       |
 | Containerization             | Docker and Docker Compose support for easy deployment (Phase 3)     |
+| Rate Limiting                | Protects against DoS attacks and excessive resource usage (Phase 3) |
 | Caching                      | Caches frequently accessed data for improved performance            |
 
 ## Endpoints
@@ -117,6 +118,20 @@ The following environment variables can be configured:
 | RABBITMQ_USERNAME   | RabbitMQ username             | guest             |
 | RABBITMQ_PASSWORD   | RabbitMQ password             | guest             |
 | H2_DB_PATH          | H2 database file path         | ./build/pubsub-db |
+
+### Rate Limiting (Phase 3)
+
+As part of Phase 3, the application implements rate limiting to protect against DoS attacks and excessive resource usage. The rate limiting features include:
+
+- **IP-based rate limiting**: Limits requests based on client IP address
+- **Endpoint-specific limits**: Different limits for different types of endpoints
+  - API endpoints: 30 requests per minute
+  - PubSubHubbub endpoints: 120 requests per minute (higher to accommodate YouTube)
+  - Other endpoints: 60 requests per minute
+- **Sliding window approach**: Counts are reset after the window period (60 seconds)
+- **429 Too Many Requests responses**: Returns appropriate HTTP status code with helpful message
+
+The rate limiting implementation leverages the existing caching infrastructure for efficiency and minimal overhead.
 
 ## Logs
 

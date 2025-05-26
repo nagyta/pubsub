@@ -1,12 +1,11 @@
 package com.example.models
 
-import org.testng.annotations.Test
-import org.testng.Assert
 import java.time.LocalDateTime
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.dao.id.EntityID
+import org.testng.Assert
+import org.testng.annotations.Test
 
 /**
  * TestNG tests for the Subscription model.
@@ -42,6 +41,38 @@ class SubscriptionTest {
         Assert.assertEquals(subscription.createdAt, now, "Created at should match")
         Assert.assertEquals(subscription.updatedAt, now, "Updated at should match")
         Assert.assertEquals(subscription.status, "active", "Status should match")
+
+        // Test toString() method (implicitly called by data class)
+        val subscriptionString = subscription.toString()
+        Assert.assertTrue(subscriptionString.contains("id=1"), "toString should contain id")
+        Assert.assertTrue(subscriptionString.contains("channelId=UC123456789"), "toString should contain channelId")
+        Assert.assertTrue(subscriptionString.contains("topic="), "toString should contain topic")
+        Assert.assertTrue(subscriptionString.contains("callbackUrl="), "toString should contain callbackUrl")
+        Assert.assertTrue(subscriptionString.contains("leaseSeconds=3600"), "toString should contain leaseSeconds")
+        Assert.assertTrue(subscriptionString.contains("status=active"), "toString should contain status")
+
+        // Test equals() method (implicitly called by data class)
+        val sameSubscription = Subscription(
+            id = 1,
+            channelId = "UC123456789",
+            topic = "https://www.youtube.com/xml/feeds/videos.xml?channel_id=UC123456789",
+            callbackUrl = "https://example.com/pubsub/youtube",
+            leaseSeconds = 3600,
+            expiresAt = now.plusSeconds(3600),
+            createdAt = now,
+            updatedAt = now,
+            status = "active"
+        )
+        Assert.assertEquals(subscription, sameSubscription, "Equal subscriptions should be equal")
+
+        // Test hashCode() method (implicitly called by data class)
+        Assert.assertEquals(subscription.hashCode(), sameSubscription.hashCode(), "Equal subscriptions should have same hashCode")
+
+        // Test copy() method (implicitly called by data class)
+        val copiedSubscription = subscription.copy(channelId = "UC987654321")
+        Assert.assertEquals(copiedSubscription.id, subscription.id, "Copied subscription should have same id")
+        Assert.assertEquals(copiedSubscription.channelId, "UC987654321", "Copied subscription should have new channelId")
+        Assert.assertEquals(copiedSubscription.topic, subscription.topic, "Copied subscription should have same topic")
     }
 
     /**
@@ -68,6 +99,16 @@ class SubscriptionTest {
             "Created at should be before or equal to current time")
         Assert.assertTrue(subscription.updatedAt.isBefore(currentTime) || subscription.updatedAt.isEqual(currentTime), 
             "Updated at should be before or equal to current time")
+
+        // Test component functions (implicitly called by data class)
+        val (id, channelId, topic, callbackUrl, leaseSeconds, expiresAt, createdAt, updatedAt, status) = subscription
+        Assert.assertEquals(id, 0, "Destructured id should match")
+        Assert.assertEquals(channelId, "UC123456789", "Destructured channelId should match")
+        Assert.assertEquals(topic, "https://www.youtube.com/xml/feeds/videos.xml?channel_id=UC123456789", "Destructured topic should match")
+        Assert.assertEquals(callbackUrl, "https://example.com/pubsub/youtube", "Destructured callbackUrl should match")
+        Assert.assertEquals(leaseSeconds, 3600, "Destructured leaseSeconds should match")
+        Assert.assertEquals(expiresAt, now.plusSeconds(3600), "Destructured expiresAt should match")
+        Assert.assertEquals(status, "active", "Destructured status should match")
     }
 
     /**
