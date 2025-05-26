@@ -1,12 +1,14 @@
 package com.example
 
 import com.example.models.AtomFeed
+import com.example.models.toNotification
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
+import java.time.LocalDateTime
 
 /**
  * Routing configuration for the YouTube PubSubHubbub Service.
@@ -51,9 +53,48 @@ fun Application.configureRouting() {
             get {
                 // YouTube sends a GET request with hub.challenge when verifying a subscription
                 val hubChallenge = call.request.queryParameters["hub.challenge"]
+                val hubMode = call.request.queryParameters["hub.mode"]
+                val hubTopic = call.request.queryParameters["hub.topic"]
+                val hubLeaseSeconds = call.request.queryParameters["hub.lease_seconds"]?.toIntOrNull() ?: 0
 
                 if (hubChallenge != null) {
                     logger.info("Received subscription verification with challenge: $hubChallenge")
+
+                    // Store subscription information if this is a subscription request
+                    if (hubMode == "subscribe" && hubTopic != null && hubLeaseSeconds > 0) {
+                        try {
+                            // Extract channel ID from topic URL
+                            // Example topic URL: https://www.youtube.com/xml/feeds/videos.xml?channel_id=UC_x5XG1OV2P6uZZ5FSM9Ttw
+                            val channelId = hubTopic.substringAfter("channel_id=")
+
+                            // Store subscription in database
+                            val callbackUrl = "${call.request.local.scheme}://${call.request.local.localHost}:${call.request.local.localPort}/pubsub/youtube"
+                            subscriptionRepository.createOrUpdateSubscription(
+                                channelId = channelId,
+                                topic = hubTopic,
+                                callbackUrl = callbackUrl,
+                                leaseSeconds = hubLeaseSeconds
+                            )
+
+                            logger.info("Subscription stored for channel: $channelId with lease: $hubLeaseSeconds seconds")
+                        } catch (e: Exception) {
+                            logger.error("Error storing subscription: ${e.message}", e)
+                        }
+                    } else if (hubMode == "unsubscribe" && hubTopic != null) {
+                        try {
+                            // Extract channel ID from topic URL
+                            val channelId = hubTopic.substringAfter("channel_id=")
+
+                            // Update subscription status to inactive
+                            subscriptionRepository.updateSubscriptionStatus(channelId, "inactive")
+
+                            logger.info("Subscription marked as inactive for channel: $channelId")
+                        } catch (e: Exception) {
+                            logger.error("Error updating subscription status: ${e.message}", e)
+                        }
+                    }
+
+                    // Respond with the challenge to confirm the subscription
                     call.respondText(hubChallenge)
                 } else {
                     logger.warn("Received GET request without hub.challenge")
@@ -91,6 +132,7 @@ fun Application.configureRouting() {
                     val title = entry.title
                     val videoId = entry.id
                     val channelName = entry.author?.name
+                    val channelUri = entry.author?.uri
 
                     // Validate title
                     if (title.isNullOrBlank()) {
@@ -106,6 +148,17 @@ fun Application.configureRouting() {
                         return@post
                     }
 
+                    // Extract channel ID from channel URI if available
+                    val channelId = channelUri?.substringAfterLast("/")
+
+                    // Verify that we have an active subscription for this channel
+                    if (channelId != null) {
+                        val subscription = subscriptionRepository.getSubscription(channelId)
+                        if (subscription == null || subscription.status != "active") {
+                            logger.warn("Received notification for channel without active subscription: $channelId")
+                        }
+                    }
+
                     // Log the notification with structured information
                     logger.info("New YouTube content: '$title' by $channelName (ID: $videoId)")
 
@@ -113,10 +166,37 @@ fun Application.configureRouting() {
                     logger.debug("Feed details - Published: ${entry.published}, Updated: ${entry.updated}, " +
                                 "Links: ${entry.links?.size ?: 0}")
 
+                    // Queue the notification for processing
+                    try {
+                        val notification = entry.toNotification()
+                        val queued = notificationQueueService.queueNotification(notification)
+
+                        if (queued) {
+                            logger.info("Notification queued successfully: $title")
+                        } else {
+                            logger.warn("Failed to queue notification: $title")
+                        }
+                    } catch (e: Exception) {
+                        logger.error("Error queueing notification: ${e.message}", e)
+                    }
+
                     call.respond(HttpStatusCode.OK)
                 } catch (e: Exception) {
                     logger.error("Error processing notification: ${e.message}", e)
                     call.respond(HttpStatusCode.BadRequest, "Invalid request format: ${e.message}")
+                }
+            }
+        }
+
+        // Subscription management endpoints
+        route("/api/subscriptions") {
+            get {
+                try {
+                    val subscriptions = subscriptionRepository.getAllActiveSubscriptions()
+                    call.respond(subscriptions)
+                } catch (e: Exception) {
+                    logger.error("Error retrieving subscriptions: ${e.message}", e)
+                    call.respond(HttpStatusCode.InternalServerError, "Error retrieving subscriptions: ${e.message}")
                 }
             }
         }

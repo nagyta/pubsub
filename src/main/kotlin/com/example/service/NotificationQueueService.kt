@@ -1,0 +1,99 @@
+package com.example.service
+
+import com.example.models.Notification
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import com.rabbitmq.client.Channel
+import com.rabbitmq.client.Connection
+import com.rabbitmq.client.ConnectionFactory
+import org.slf4j.LoggerFactory
+import java.io.IOException
+import java.util.concurrent.TimeoutException
+
+/**
+ * Service for queueing YouTube content notifications using RabbitMQ.
+ */
+class NotificationQueueService {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+    private val queueName = "youtube_notifications"
+    private var connection: Connection? = null
+    private var channel: Channel? = null
+    private val objectMapper = ObjectMapper().apply {
+        registerKotlinModule()
+        disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+    }
+
+    /**
+     * Initialize the RabbitMQ connection and channel.
+     */
+    fun init() {
+        try {
+            logger.info("Initializing RabbitMQ connection")
+
+            val factory = ConnectionFactory()
+            factory.host = "localhost"
+            factory.port = 5672
+            factory.username = "guest"
+            factory.password = "guest"
+
+            connection = factory.newConnection()
+            channel = connection?.createChannel()
+
+            // Declare a durable queue
+            channel?.queueDeclare(queueName, true, false, false, null)
+
+            logger.info("RabbitMQ connection initialized")
+        } catch (e: IOException) {
+            logger.error("Error initializing RabbitMQ connection: ${e.message}", e)
+        } catch (e: TimeoutException) {
+            logger.error("Timeout initializing RabbitMQ connection: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Queue a notification for processing.
+     *
+     * @param notification The notification to queue
+     * @return True if the notification was queued successfully, false otherwise
+     */
+    fun queueNotification(notification: Notification): Boolean {
+        try {
+            if (channel == null || !channel!!.isOpen) {
+                logger.warn("Channel is not open, attempting to reconnect")
+                init()
+                if (channel == null || !channel!!.isOpen) {
+                    logger.error("Failed to reconnect to RabbitMQ")
+                    return false
+                }
+            }
+
+            // Convert notification to JSON
+            val notificationJson = objectMapper.writeValueAsString(notification)
+
+            // Publish the notification to the queue
+            channel?.basicPublish("", queueName, null, notificationJson.toByteArray())
+
+            logger.info("Notification queued: ${notification.title} (ID: ${notification.videoId})")
+            return true
+        } catch (e: Exception) {
+            logger.error("Error queueing notification: ${e.message}", e)
+            return false
+        }
+    }
+
+    /**
+     * Close the RabbitMQ connection and channel.
+     */
+    fun close() {
+        try {
+            channel?.close()
+            connection?.close()
+            logger.info("RabbitMQ connection closed")
+        } catch (e: IOException) {
+            logger.error("Error closing RabbitMQ connection: ${e.message}", e)
+        } catch (e: TimeoutException) {
+            logger.error("Timeout closing RabbitMQ connection: ${e.message}", e)
+        }
+    }
+}

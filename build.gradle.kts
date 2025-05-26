@@ -35,6 +35,7 @@ dependencies {
     // XML parsing
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.15.2")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
 
     // Status pages for error handling
     implementation("io.ktor:ktor-server-status-pages")
@@ -42,6 +43,20 @@ dependencies {
     // Client for verification (if needed)
     implementation("io.ktor:ktor-client-core")
     implementation("io.ktor:ktor-client-cio")
+
+    // Database for subscription persistence
+    implementation("com.h2database:h2:2.2.224")
+    implementation("org.jetbrains.exposed:exposed-core:0.46.0")
+    implementation("org.jetbrains.exposed:exposed-dao:0.46.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.46.0")
+    implementation("org.jetbrains.exposed:exposed-java-time:0.46.0")
+
+    // Message queue for notification queueing
+    implementation("com.rabbitmq:amqp-client:5.20.0")
+
+    // Caching
+    implementation("org.ehcache:ehcache:3.10.8")
+    implementation("javax.cache:cache-api:1.1.1")
 
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.testng:testng:7.7.1")
