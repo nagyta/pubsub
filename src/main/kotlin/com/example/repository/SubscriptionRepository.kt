@@ -191,7 +191,7 @@ class SubscriptionRepository {
      * @return True if the subscription was updated, false otherwise
      */
     fun updateSubscriptionStatus(channelId: String, status: String): Boolean {
-        val updated = transaction {
+        val updatedSubscription = transaction {
             val subscription = SubscriptionEntity.find { 
                 SubscriptionsTable.channelId eq channelId 
             }.firstOrNull()
@@ -199,23 +199,18 @@ class SubscriptionRepository {
             if (subscription != null) {
                 subscription.status = status
                 subscription.updatedAt = LocalDateTime.now()
-                true
+                subscription.toSubscription()
             } else {
-                false
+                null
             }
         }
 
+        val updated = updatedSubscription != null
+
         if (updated) {
-            // Get the updated subscription and update the cache
-            val updatedSubscription = getSubscription(channelId)
-            if (updatedSubscription != null) {
-                cacheService.put("subscriptions", "subscription:$channelId", updatedSubscription)
-                logger.debug("Updated cache for subscription status: $channelId -> $status")
-            } else {
-                // If the subscription is not found, remove it from the cache
-                cacheService.remove("subscriptions", "subscription:$channelId")
-                logger.debug("Removed subscription from cache: $channelId")
-            }
+            // Update the cache with the updated subscription
+            cacheService.put("subscriptions", "subscription:$channelId", updatedSubscription)
+            logger.debug("Updated cache for subscription status: $channelId -> $status")
 
             // Invalidate all_active_subscriptions cache since we've modified a subscription's status
             cacheService.remove("subscriptions", "all_active_subscriptions")
