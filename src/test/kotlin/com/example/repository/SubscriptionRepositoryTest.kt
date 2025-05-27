@@ -1,8 +1,8 @@
 package com.example.repository
 
-import com.example.models.Subscription
-import com.example.models.SubscriptionEntity
 import com.example.models.SubscriptionsTable
+import com.example.service.MockCacheService
+import com.example.service.interfaces.ICacheService
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -10,7 +10,6 @@ import org.testng.Assert
 import org.testng.annotations.AfterMethod
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
-import java.time.LocalDateTime
 
 /**
  * TestNG tests for the SubscriptionRepository.
@@ -19,6 +18,7 @@ import java.time.LocalDateTime
 class SubscriptionRepositoryTest {
     private lateinit var repository: SubscriptionRepository
     private lateinit var testDb: Database
+    private lateinit var mockCacheService: ICacheService
 
     /**
      * Set up the test environment before each test.
@@ -29,8 +29,11 @@ class SubscriptionRepositoryTest {
         // Connect to an in-memory H2 database for testing
         testDb = Database.connect("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", driver = "org.h2.Driver")
 
-        // Create a new repository instance
-        repository = SubscriptionRepository()
+        // Create a mock cache service
+        mockCacheService = MockCacheService()
+
+        // Create a new repository instance with the mock cache service
+        repository = SubscriptionRepository(mockCacheService)
 
         // Initialize the repository (creates tables)
         repository.init()
@@ -291,7 +294,7 @@ class SubscriptionRepositoryTest {
     @Test
     fun testInitErrorHandling() {
         // Create a repository with a mock database connection that will throw an exception
-        val repository = SubscriptionRepository()
+        val repository = SubscriptionRepository(MockCacheService())
 
         try {
             // Call init again (it was already called in setUp)
@@ -325,7 +328,7 @@ class SubscriptionRepositoryTest {
 
             // If we got here, the test failed because the method should have thrown an exception
             Assert.fail("Method should throw an exception when the database operation fails")
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Expected exception
         }
     }

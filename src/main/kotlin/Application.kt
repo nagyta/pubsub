@@ -1,11 +1,10 @@
 package com.example
 
-import com.example.repository.SubscriptionRepository
-import com.example.service.CacheService
-import com.example.service.NotificationConsumerService
-import com.example.service.NotificationQueueService
-import com.example.service.PubSubHubbubService
-import com.example.service.RateLimitService
+import com.example.repository.interfaces.ISubscriptionRepository
+import com.example.service.interfaces.ICacheService
+import com.example.service.interfaces.INotificationConsumerService
+import com.example.service.interfaces.INotificationQueueService
+import com.example.service.interfaces.IRateLimitService
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -21,17 +20,12 @@ import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import org.jetbrains.exposed.sql.Database
+import org.koin.ktor.ext.get
+import org.koin.ktor.plugin.Koin
+import org.koin.logger.slf4jLogger
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("com.example.Application")
-
-// Initialize repositories and services
-val cacheService = CacheService()
-val subscriptionRepository = SubscriptionRepository()
-val notificationQueueService = NotificationQueueService()
-val notificationConsumerService = NotificationConsumerService()
-val rateLimitService = RateLimitService()
-val pubSubHubbubService = PubSubHubbubService()
 
 fun main(args: Array<String>) {
     io.ktor.server.cio.EngineMain.main(args)
@@ -40,6 +34,12 @@ fun main(args: Array<String>) {
 fun Application.module() {
     // Log application startup
     logger.info("Starting YouTube PubSubHubbub Service - Phase 3")
+
+    // Install Koin
+    install(Koin) {
+        slf4jLogger()
+        modules(appModules)
+    }
 
     // Initialize database
     initDatabase()
@@ -64,6 +64,7 @@ fun Application.module() {
     }
 
     // Configure rate limiting interceptor
+    val rateLimitService = get<IRateLimitService>()
     intercept(ApplicationCallPipeline.Plugins) {
         if (!rateLimitService.checkRateLimit(call)) {
             call.respond(
@@ -86,7 +87,7 @@ fun Application.module() {
 /**
  * Initialize the database connection, repositories, and services.
  */
-private fun initDatabase() {
+private fun Application.initDatabase() {
     logger.info("Initializing database connection")
 
     // Connect to H2 database
@@ -95,6 +96,13 @@ private fun initDatabase() {
         url = "jdbc:h2:file:$dbPath;DB_CLOSE_DELAY=-1",
         driver = "org.h2.Driver"
     )
+
+    // Get services from Koin
+    val subscriptionRepository = get<ISubscriptionRepository>()
+    val cacheService = get<ICacheService>()
+    val notificationQueueService = get<INotificationQueueService>()
+    val notificationConsumerService = get<INotificationConsumerService>()
+    val rateLimitService = get<IRateLimitService>()
 
     // Initialize repositories
     subscriptionRepository.init()

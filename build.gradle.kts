@@ -57,6 +57,11 @@ dependencies {
     implementation("io.ktor:ktor-server-core")
     implementation("io.ktor:ktor-server-config-yaml")
 
+    // Koin for dependency injection
+    implementation("io.insert-koin:koin-core:3.5.3")
+    implementation("io.insert-koin:koin-ktor:3.5.3")
+    implementation("io.insert-koin:koin-logger-slf4j:3.5.3")
+
     // Content negotiation and XML support
     implementation("io.ktor:ktor-server-content-negotiation")
     implementation("io.ktor:ktor-serialization-jackson")
@@ -96,4 +101,13 @@ dependencies {
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.testng:testng:7.7.1")
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")
+
+    // Koin testing
+    testImplementation("io.insert-koin:koin-test:3.5.3") {
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-test-junit")
+    }
+    testImplementation("io.insert-koin:koin-test-junit5:3.5.3") {
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-test-junit")
+        exclude(group = "org.junit.jupiter")
+    }
 }

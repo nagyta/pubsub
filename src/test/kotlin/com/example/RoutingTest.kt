@@ -8,19 +8,43 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.server.application.Application
 import io.ktor.server.testing.testApplication
+import org.koin.core.context.GlobalContext
+import org.koin.core.context.stopKoin
+import org.koin.test.KoinTest
 import org.testng.Assert
+import org.testng.annotations.AfterMethod
+import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 
 /**
  * TestNG tests for the routing functionality.
  * Tests the endpoints for subscription verification and content notifications.
  */
-class RoutingTest {
+class RoutingTest : KoinTest {
+    private lateinit var application: Application
+
+    @BeforeMethod
+    fun setUp() {
+        // Make sure Koin is stopped before each test
+        if (GlobalContext.getOrNull() != null) {
+            stopKoin()
+        }
+    }
+
+    @AfterMethod
+    fun tearDown() {
+        // Stop Koin after each test
+        if (GlobalContext.getOrNull() != null) {
+            stopKoin()
+        }
+    }
 
     @Test
     fun testHomePage() = testApplication {
         application {
+            application = this
             module()
         }
         // Test the home page endpoint
@@ -175,7 +199,7 @@ class RoutingTest {
         application {
             module()
         }
-        // Sample JSON with empty title
+        // Sample JSON with an empty title
         val sampleJson = """
             {
                 "entry": {

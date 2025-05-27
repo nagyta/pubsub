@@ -1,42 +1,40 @@
-package com.example
+package com.example.routing
 
-import com.example.routing.configureConfigRoutes
-import com.example.routing.configureHealthRoutes
-import com.example.routing.configureHomeRoutes
-import com.example.routing.configureNotificationRoutes
-import com.example.routing.configurePubSubRoutes
-import com.example.routing.configureSubscriptionRoutes
 import io.ktor.server.application.Application
 import org.slf4j.LoggerFactory
 
-private val logger = LoggerFactory.getLogger("com.example.Routing")
+private val logger = LoggerFactory.getLogger("com.example.routing.Routing")
 
 /**
  * Configures all routing for the application.
- * This file is kept for backward compatibility.
- * 
- * The actual routing implementation has been refactored into separate files in the com.example.routing package.
+ * This function calls individual routing configuration functions for each functional area.
  */
 fun Application.configureRouting() {
     logger.info("Configuring application routing")
-
+    
     // Configure home routes
     configureHomeRoutes()
-
+    logger.info("Home routes configured")
+    
     // Configure health check routes
     configureHealthRoutes()
-
+    logger.info("Health check routes configured")
+    
     // Configure PubSubHubbub routes
     configurePubSubRoutes()
-
+    logger.info("PubSubHubbub routes configured")
+    
     // Configure subscription management routes
     configureSubscriptionRoutes()
-
+    logger.info("Subscription management routes configured")
+    
     // Configure notification consumer routes
     configureNotificationRoutes()
-
+    logger.info("Notification consumer routes configured")
+    
     // Configure service configuration routes
     configureConfigRoutes()
-
+    logger.info("Service configuration routes configured")
+    
     logger.info("All routes configured successfully")
 }
