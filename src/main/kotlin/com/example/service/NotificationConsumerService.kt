@@ -1,25 +1,36 @@
 package com.example.service
 
 import com.example.models.Notification
+import com.example.service.interfaces.INotificationConsumerService
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.rabbitmq.client.*
-import kotlinx.coroutines.*
-import org.slf4j.LoggerFactory
+import com.rabbitmq.client.AMQP
+import com.rabbitmq.client.Channel
+import com.rabbitmq.client.Connection
+import com.rabbitmq.client.ConnectionFactory
+import com.rabbitmq.client.DefaultConsumer
+import com.rabbitmq.client.Envelope
 import java.io.IOException
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import org.slf4j.LoggerFactory
 
 /**
  * Service for consuming and processing YouTube content notifications from RabbitMQ.
  * This service is part of Phase 3 implementation, adding the ability to process
  * notifications that were previously only queued.
  */
-class NotificationConsumerService : CoroutineScope {
+class NotificationConsumerService : CoroutineScope, INotificationConsumerService {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val queueName = "youtube_notifications"
     private var connection: Connection? = null
@@ -38,7 +49,7 @@ class NotificationConsumerService : CoroutineScope {
     /**
      * Initialize the RabbitMQ connection and channel.
      */
-    fun init() {
+    override fun init() {
         try {
             logger.info("Initializing NotificationConsumerService")
 
@@ -65,7 +76,7 @@ class NotificationConsumerService : CoroutineScope {
     /**
      * Start consuming notifications from the queue.
      */
-    fun startConsuming() {
+    override fun startConsuming() {
         if (isRunning) {
             logger.warn("Consumer is already running")
             return
@@ -138,7 +149,7 @@ class NotificationConsumerService : CoroutineScope {
      *
      * @param notification The notification to process
      */
-    private suspend fun processNotification(notification: Notification) {
+    override suspend fun processNotification(notification: Notification) {
         // Log detailed information about the notification
         logger.info("Processing YouTube notification:")
         logger.info("- Title: ${notification.title}")
@@ -162,14 +173,14 @@ class NotificationConsumerService : CoroutineScope {
      *
      * @return True if the consumer is running, false otherwise
      */
-    fun isRunning(): Boolean {
+    override fun isRunning(): Boolean {
         return isRunning
     }
 
     /**
      * Stop consuming notifications.
      */
-    fun stopConsuming() {
+    override fun stopConsuming() {
         try {
             logger.info("Stopping notification consumer")
             isRunning = false
@@ -193,7 +204,7 @@ class NotificationConsumerService : CoroutineScope {
             logger.error("Error stopping consumer: ${e.message}", e)
         } catch (e: TimeoutException) {
             logger.error("Timeout stopping consumer: ${e.message}", e)
-        } catch (e: CancellationException) {
+        } catch (_: CancellationException) {
             logger.info("Coroutines cancelled successfully")
         } catch (e: Exception) {
             logger.error("Error while stopping consumer: ${e.message}", e)

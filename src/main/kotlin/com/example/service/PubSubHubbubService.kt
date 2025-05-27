@@ -1,5 +1,6 @@
 package com.example.service
 
+import com.example.service.interfaces.IPubSubHubbubService
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.parameter
@@ -17,7 +18,7 @@ import org.slf4j.LoggerFactory
  * Service for interacting with the YouTube PubSubHubbub hub.
  * This service handles sending subscription requests to the hub.
  */
-class PubSubHubbubService {
+class PubSubHubbubService : IPubSubHubbubService {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val client = HttpClient(CIO) {
         expectSuccess = false
@@ -40,11 +41,11 @@ class PubSubHubbubService {
      * @param mode The subscription mode ("subscribe" or "unsubscribe")
      * @return True if the request was successful, false otherwise
      */
-    suspend fun sendSubscriptionRequest(
+    override suspend fun sendSubscriptionRequest(
         topic: String,
         callback: String,
         leaseSeconds: Int,
-        mode: String = "subscribe"
+        mode: String
     ): Boolean {
         return try {
             logger.info("Sending $mode request to hub for topic: $topic")
@@ -79,7 +80,7 @@ class PubSubHubbubService {
     /**
      * Close the HTTP client when the service is no longer needed.
      */
-    fun close() {
+    override fun close() {
         client.close()
     }
 }

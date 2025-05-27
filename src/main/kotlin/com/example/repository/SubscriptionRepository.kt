@@ -1,9 +1,10 @@
 package com.example.repository
 
-import com.example.cacheService
 import com.example.models.Subscription
 import com.example.models.SubscriptionEntity
 import com.example.models.SubscriptionsTable
+import com.example.repository.interfaces.ISubscriptionRepository
+import com.example.service.interfaces.ICacheService
 import java.time.LocalDateTime
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.and
@@ -13,13 +14,13 @@ import org.slf4j.LoggerFactory
 /**
  * Repository for managing YouTube PubSubHubbub subscriptions in the database.
  */
-class SubscriptionRepository {
+class SubscriptionRepository(private val cacheService: ICacheService) : ISubscriptionRepository {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     /**
      * Initialize the database and create the necessary tables.
      */
-    fun init() {
+    override fun init() {
         logger.info("Initializing subscription database")
         transaction {
             SchemaUtils.create(SubscriptionsTable)
@@ -37,7 +38,7 @@ class SubscriptionRepository {
      * @param leaseSeconds The lease seconds
      * @return The created or updated subscription
      */
-    fun createOrUpdateSubscription(
+    override fun createOrUpdateSubscription(
         channelId: String,
         topic: String,
         callbackUrl: String,
@@ -94,7 +95,7 @@ class SubscriptionRepository {
      * @param channelId The YouTube channel ID
      * @return The subscription or null if not found
      */
-    fun getSubscription(channelId: String): Subscription? {
+    override fun getSubscription(channelId: String): Subscription? {
         try {
             // Try to get from cache first
             val cachedSubscription = cacheService.get<Subscription>("subscriptions", "subscription:$channelId")
@@ -129,7 +130,7 @@ class SubscriptionRepository {
      *
      * @return List of active subscriptions
      */
-    fun getAllActiveSubscriptions(): List<Subscription> {
+    override fun getAllActiveSubscriptions(): List<Subscription> {
         try {
             // Try to get from cache first
             val cachedSubscriptions = cacheService.get<List<Subscription>>("subscriptions", "all_active_subscriptions")
@@ -164,7 +165,7 @@ class SubscriptionRepository {
      * @param expiryThreshold The threshold for expiry (in seconds)
      * @return List of subscriptions that will expire within the threshold
      */
-    fun getExpiringSubscriptions(expiryThreshold: Long): List<Subscription> {
+    override fun getExpiringSubscriptions(expiryThreshold: Long): List<Subscription> {
         try {
             val thresholdDateTime = LocalDateTime.now().plusSeconds(expiryThreshold)
             val cacheKey = "expiring_subscriptions:$expiryThreshold"
@@ -204,7 +205,7 @@ class SubscriptionRepository {
      * @param status The new status
      * @return True if the subscription was updated, false otherwise
      */
-    fun updateSubscriptionStatus(channelId: String, status: String): Boolean {
+    override fun updateSubscriptionStatus(channelId: String, status: String): Boolean {
         try {
             val updatedSubscription = transaction {
                 val subscription = SubscriptionEntity.find { 
@@ -246,7 +247,7 @@ class SubscriptionRepository {
      * @param channelId The YouTube channel ID
      * @return True if the subscription was deleted, false otherwise
      */
-    fun deleteSubscription(channelId: String): Boolean {
+    override fun deleteSubscription(channelId: String): Boolean {
         try {
             val deleted = transaction {
                 val subscription = SubscriptionEntity.find { 
@@ -284,7 +285,7 @@ class SubscriptionRepository {
      *
      * @return List of all subscriptions
      */
-    fun getAllSubscriptions(): List<Subscription> {
+    override fun getAllSubscriptions(): List<Subscription> {
         try {
             // get from the database
             val subscriptions = transaction {

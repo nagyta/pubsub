@@ -1,12 +1,7 @@
 package com.example.service
 
-import com.example.cacheService
-import java.time.Duration
+import com.example.service.interfaces.ICacheService
 import java.time.Instant
-import org.ehcache.CacheManager
-import org.ehcache.config.builders.CacheConfigurationBuilder
-import org.ehcache.config.builders.ExpiryPolicyBuilder
-import org.ehcache.config.builders.ResourcePoolsBuilder
 import org.testng.Assert
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
@@ -17,6 +12,7 @@ import org.testng.annotations.Test
  */
 class RateLimitServiceTest {
     private lateinit var rateLimitService: RateLimitService
+    private lateinit var cacheService: ICacheService
     private lateinit var cacheName: String
     private val defaultLimit = 60
     private val apiLimit = 30
@@ -29,7 +25,11 @@ class RateLimitServiceTest {
      */
     @BeforeMethod
     fun setUp() {
-        rateLimitService = RateLimitService()
+        // Initialize the cache service
+        cacheService = MockCacheService()
+
+        // Initialize the rate limit service with the cache service
+        rateLimitService = RateLimitService(cacheService)
 
         // Get the cacheName field using reflection
         val cacheNameField = RateLimitService::class.java.getDeclaredField("cacheName")
@@ -64,30 +64,8 @@ class RateLimitServiceTest {
      * Helper method to create the rate_limits cache if it doesn't exist.
      */
     private fun createRateLimitsCache() {
-        // Get the cacheManager field using reflection
-        val cacheServiceClass = CacheService::class.java
-        val cacheManagerField = cacheServiceClass.getDeclaredField("cacheManager")
-        cacheManagerField.isAccessible = true
-        val cacheManager = cacheManagerField.get(cacheService) as CacheManager
-
-        // Check if the cache already exists
-        val cache = cacheManager.getCache(cacheName, String::class.java, Any::class.java)
-
-        if (cache == null) {
-            // Create the cache configuration
-            val cacheConfig = CacheConfigurationBuilder.newCacheConfigurationBuilder(
-                String::class.java,
-                Any::class.java,
-                ResourcePoolsBuilder.heap(100)
-            )
-            .withExpiry(ExpiryPolicyBuilder.timeToLiveExpiration(Duration.ofMinutes(10)))
-            .build()
-
-            // Create the cache
-            cacheManager.createCache(cacheName, cacheConfig)
-        }
-
-        // Clear any existing rate limit data from previous tests
+        // Since we're using MockCacheService, we don't need to create the cache
+        // Just clear any existing rate limit data from previous tests
         cacheService.clear(cacheName)
     }
 
@@ -290,7 +268,7 @@ class RateLimitServiceTest {
         // Check if we need to reset the window
         val now = Instant.now().epochSecond
         if (now - rateData.timestamp > windowSize) {
-            // Reset counter for new window
+            // Reset counter for the new window
             rateData.count = 1
             rateData.timestamp = now
             cacheService.put(cacheName, key, rateData)

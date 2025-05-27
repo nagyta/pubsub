@@ -1,6 +1,7 @@
 package com.example.service
 
-import com.example.cacheService
+import com.example.service.interfaces.ICacheService
+import com.example.service.interfaces.IRateLimitService
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.path
@@ -12,7 +13,7 @@ import org.slf4j.LoggerFactory
  * Service for rate limiting requests to protect against DoS attacks and excessive resource usage.
  * Implements both IP-based and endpoint-based rate limiting.
  */
-class RateLimitService {
+class RateLimitService(private val cacheService: ICacheService) : IRateLimitService {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val cacheName = "rate_limits"
 
@@ -30,7 +31,7 @@ class RateLimitService {
     /**
      * Initialize the rate limit service.
      */
-    fun init() {
+    override fun init() {
         logger.info("Initializing rate limit service")
         // Ensure the cache is ready for rate limiting
         if (!cacheService.isAvailable()) {
@@ -45,7 +46,7 @@ class RateLimitService {
      * @param call The ApplicationCall to check
      * @return True if the request is allowed, false if it should be rate limited
      */
-    fun checkRateLimit(call: ApplicationCall): Boolean {
+    override fun checkRateLimit(call: ApplicationCall): Boolean {
         // If rate limiting is disabled, always allow the request
         if (!enabled.get()) {
             return true
@@ -95,7 +96,7 @@ class RateLimitService {
      *
      * @return A map containing the current configuration
      */
-    fun getConfiguration(): Map<String, Any> {
+    override fun getConfiguration(): Map<String, Any> {
         return mapOf(
             "enabled" to enabled.get(),
             "defaultLimit" to defaultLimit,
@@ -115,7 +116,7 @@ class RateLimitService {
      * @param windowSize The window size in seconds
      * @return A map containing the updated configuration
      */
-    fun updateConfiguration(
+    override fun updateConfiguration(
         enabled: Boolean,
         defaultLimit: Int,
         apiLimit: Int,

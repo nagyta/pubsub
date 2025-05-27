@@ -1,20 +1,21 @@
 package com.example.service
 
 import com.example.models.Notification
+import com.example.service.interfaces.INotificationQueueService
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.rabbitmq.client.Channel
 import com.rabbitmq.client.Connection
 import com.rabbitmq.client.ConnectionFactory
-import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.util.concurrent.TimeoutException
+import org.slf4j.LoggerFactory
 
 /**
  * Service for queueing YouTube content notifications using RabbitMQ.
  */
-class NotificationQueueService {
+class NotificationQueueService : INotificationQueueService {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val queueName = "youtube_notifications"
     private var connection: Connection? = null
@@ -27,7 +28,7 @@ class NotificationQueueService {
     /**
      * Initialize the RabbitMQ connection and channel.
      */
-    fun init() {
+    override fun init() {
         try {
             logger.info("Initializing RabbitMQ connection")
 
@@ -57,7 +58,7 @@ class NotificationQueueService {
      * @param notification The notification to queue
      * @return True if the notification was queued successfully, false otherwise
      */
-    fun queueNotification(notification: Notification): Boolean {
+    override fun queueNotification(notification: Notification): Boolean {
         try {
             if (channel == null || !channel!!.isOpen) {
                 logger.warn("Channel is not open, attempting to reconnect")
@@ -85,7 +86,7 @@ class NotificationQueueService {
     /**
      * Close the RabbitMQ connection and channel.
      */
-    fun close() {
+    override fun close() {
         try {
             channel?.close()
             connection?.close()
@@ -102,7 +103,7 @@ class NotificationQueueService {
      *
      * @return True if the connection is available, false otherwise
      */
-    fun isAvailable(): Boolean {
+    override fun isAvailable(): Boolean {
         return try {
             if (channel == null || !channel!!.isOpen) {
                 logger.warn("Channel is not open, attempting to reconnect")
