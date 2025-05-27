@@ -4,11 +4,11 @@ import com.example.repository.SubscriptionRepository
 import com.example.service.CacheService
 import com.example.service.NotificationConsumerService
 import com.example.service.NotificationQueueService
+import com.example.service.PubSubHubbubService
 import com.example.service.RateLimitService
 import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.jackson.JacksonConverter
@@ -31,6 +31,7 @@ val subscriptionRepository = SubscriptionRepository()
 val notificationQueueService = NotificationQueueService()
 val notificationConsumerService = NotificationConsumerService()
 val rateLimitService = RateLimitService()
+val pubSubHubbubService = PubSubHubbubService()
 
 fun main(args: Array<String>) {
     io.ktor.server.cio.EngineMain.main(args)
@@ -43,9 +44,9 @@ fun Application.module() {
     // Initialize database
     initDatabase()
 
-    // Configure XML content negotiation
+    // Configure content negotiation for JSON
     install(ContentNegotiation) {
-        register(ContentType.Application.Xml, JacksonConverter(createXmlMapper()))
+        register(ContentType.Application.Json, JacksonConverter(createJsonMapper()))
     }
 
     // Configure status pages for error handling with enhanced logging
@@ -112,24 +113,19 @@ private fun initDatabase() {
     logger.info("Database and services initialization complete")
 }
 
-// Create XML mapper with Kotlin support and optimized configuration
-private fun createXmlMapper(): XmlMapper {
-    val xmlModule = JacksonXmlModule().apply {
-        setDefaultUseWrapper(false)
-    }
-    return XmlMapper(xmlModule).apply {
-        registerKotlinModule()
-        disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
 
-        // Performance optimizations
-        // Disable features that are not needed for our use case
-        disable(SerializationFeature.INDENT_OUTPUT) // No need for pretty printing
+// Create JSON mapper with Kotlin support and optimized configuration
+private fun createJsonMapper() = jacksonObjectMapper().apply {
+    // Register JavaTimeModule for Java 8 date/time types (LocalDateTime, etc.)
+    registerModule(JavaTimeModule())
 
-        // Configure object mapper for faster parsing
-        factory.configure(com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE, false)
-        factory.configure(com.fasterxml.jackson.core.JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
+    // Configure date serialization
+    disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
 
-        // Enable stream optimization
-        factory.configure(com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE, false)
-    }
+    // Performance optimizations
+    disable(SerializationFeature.INDENT_OUTPUT) // No need for pretty printing
+
+    // Configure object mapper for faster parsing
+    factory.configure(com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE, false)
+    factory.configure(com.fasterxml.jackson.core.JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
 }

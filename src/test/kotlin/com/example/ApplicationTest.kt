@@ -1,9 +1,12 @@
 package com.example
 
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.server.testing.*
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
+import io.ktor.server.testing.testApplication
 import org.testng.Assert
 import org.testng.annotations.Test
 
@@ -21,24 +24,23 @@ class ApplicationTest {
         // Test that the application is properly configured
         // by making a request that exercises the content negotiation plugin
 
-        // Sample XML that mimics YouTube's Atom feed format
-        val sampleXml = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <feed xmlns="http://www.w3.org/2005/Atom">
-                <entry>
-                    <id>yt:video:ABC12345678</id>
-                    <title>Test Video Title</title>
-                    <author>
-                        <name>Test Channel</name>
-                    </author>
-                </entry>
-            </feed>
+        // Sample JSON that mimics YouTube's Atom feed format
+        val sampleJson = """
+            {
+                "entry": {
+                    "id": "yt:video:ABC12345678",
+                    "title": "Test Video Title",
+                    "author": {
+                        "name": "Test Channel"
+                    }
+                }
+            }
         """.trimIndent()
 
-        // Make a request that uses XML content negotiation
+        // Make a request that uses JSON content negotiation
         val response = client.post("/pubsub/youtube") {
-            contentType(ContentType.Application.Xml)
-            setBody(sampleXml)
+            contentType(ContentType.Application.Json)
+            setBody(sampleJson)
         }
 
         // If the application is properly configured, this should return OK
@@ -53,13 +55,13 @@ class ApplicationTest {
         // Test that the status pages plugin is properly configured
         // by making a request that should trigger an error
 
-        // Invalid XML that should cause an error
-        val invalidXml = "This is not XML"
+        // Invalid JSON that should cause an error
+        val invalidJson = "This is not JSON"
 
-        // Make a request with invalid XML
+        // Make a request with invalid JSON
         val response = client.post("/pubsub/youtube") {
-            contentType(ContentType.Application.Xml)
-            setBody(invalidXml)
+            contentType(ContentType.Application.Json)
+            setBody(invalidJson)
         }
 
         // If the status pages plugin is properly configured, this should return BadRequest
@@ -78,11 +80,11 @@ class ApplicationTest {
 
         // Make a request with an unsupported content type
         val response = client.post("/pubsub/youtube") {
-            contentType(ContentType.Application.Json)
-            setBody("{}")
+            contentType(ContentType.Text.Plain)
+            setBody("This is plain text, not JSON")
         }
 
-        // The application tries to parse the JSON as XML and fails with a BadRequest
+        // The application tries to parse the plain text as JSON and fails with a BadRequest
         Assert.assertEquals(response.status, HttpStatusCode.BadRequest)
     }
 }

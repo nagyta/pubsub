@@ -13,6 +13,7 @@ This microservice handles YouTube PubSubHubbub requests and logs new content tit
 | Subscription Verification    | Handles YouTube's subscription verification requests                |
 | Content Notifications        | Processes notifications when new videos are published               |
 | XML Parsing                  | Parses YouTube's Atom XML feed format                              |
+| JSON Support                 | Supports JSON for API requests from third-party clients             |
 | Title Logging                | Logs the title of newly published videos                            |
 | Subscription Persistence     | Stores subscription data in a database for management               |
 | Notification Queueing        | Queues notifications for reliable processing                        |
@@ -23,13 +24,67 @@ This microservice handles YouTube PubSubHubbub requests and logs new content tit
 
 ## Endpoints
 
+### General
 - `GET /` - Home page
-- `GET /pubsub/youtube` - Handles subscription verification
-- `POST /pubsub/youtube` - Receives content notifications
+
+### Health Checks
+- `GET /health` - Basic health check for load balancing and Kubernetes
+- `GET /health/ready` - Readiness check that verifies all required services are available
+
+### PubSubHubbub
+- `GET /pubsub/youtube` - Handles subscription verification from YouTube
+- `POST /pubsub/youtube` - Receives content notifications when new videos are published
+
+### Subscription Management (Phase 4)
 - `GET /api/subscriptions` - Retrieves all active subscriptions
-- `GET /api/notifications/consumer/status` - Checks the status of the notification consumer (Phase 3)
-- `POST /api/notifications/consumer/start` - Starts the notification consumer (Phase 3)
-- `POST /api/notifications/consumer/stop` - Stops the notification consumer (Phase 3)
+- `GET /api/subscriptions/all` - Retrieves all subscriptions (including inactive)
+- `GET /api/subscriptions/{channelId}` - Retrieves a specific subscription by channel ID
+- `POST /api/subscriptions` - Creates a new subscription and sends request to YouTube hub
+- `PUT /api/subscriptions/{channelId}` - Updates an existing subscription
+- `PUT /api/subscriptions/{channelId}/status` - Updates a subscription's status (active/inactive)
+- `DELETE /api/subscriptions/{channelId}` - Deletes a subscription
+
+### Notification Management (Phase 3)
+- `GET /api/notifications/consumer/status` - Checks the status of the notification consumer
+- `POST /api/notifications/consumer/start` - Starts the notification consumer
+- `POST /api/notifications/consumer/stop` - Stops the notification consumer
+
+### Service Configuration (Phase 4)
+- `GET /api/config` - Gets the current service configuration (cache and rate limiting)
+- `PUT /api/config` - Updates the service configuration
+
+## API Examples
+
+### Creating a Subscription with JSON
+
+You can create a new subscription by sending a POST request to the `/api/subscriptions` endpoint with a JSON payload:
+
+```bash
+curl -X POST http://localhost:8080/api/subscriptions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "channelId": "YOUR_YOUTUBE_CHANNEL_ID",
+    "topic": "https://www.youtube.com/feeds/videos.xml?channel_id=YOUR_YOUTUBE_CHANNEL_ID",
+    "callbackUrl": "http://pubsub.wernernagy.hu/pubsub/youtube",
+    "leaseSeconds": 3600
+  }'
+```
+
+### Updating Service Configuration with JSON
+
+You can update the service configuration by sending a PUT request to the `/api/config` endpoint with a JSON payload:
+
+```bash
+curl -X PUT http://localhost:8080/api/config \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cacheEnabled": true,
+    "cacheHeapSize": 200,
+    "cacheTtlSeconds": 1800,
+    "rateLimitEnabled": true,
+    "rateLimitPerMinute": 60
+  }'
+```
 
 ## Setting Up YouTube PubSubHubbub Subscriptions
 

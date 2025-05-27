@@ -1,33 +1,22 @@
 package com.example
 
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.server.testing.*
+import io.ktor.client.request.get
+import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
+import io.ktor.server.testing.testApplication
 import org.testng.Assert
 import org.testng.annotations.Test
-import com.example.models.AtomFeed
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule
 
 /**
  * TestNG tests for the routing functionality.
  * Tests the endpoints for subscription verification and content notifications.
  */
 class RoutingTest {
-
-    /**
-     * Creates an XmlMapper with Kotlin support for testing.
-     */
-    private fun createXmlMapper(): XmlMapper {
-        val xmlModule = JacksonXmlModule().apply {
-            setDefaultUseWrapper(false)
-        }
-        return XmlMapper(xmlModule).apply {
-            registerKotlinModule()
-        }
-    }
 
     @Test
     fun testHomePage() = testApplication {
@@ -72,28 +61,32 @@ class RoutingTest {
         application {
             module()
         }
-        // Sample XML that mimics YouTube's Atom feed format
-        val sampleXml = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <feed xmlns="http://www.w3.org/2005/Atom">
-                <entry>
-                    <id>yt:video:ABC12345678</id>
-                    <title>Test Video Title</title>
-                    <author>
-                        <name>Test Channel</name>
-                        <uri>https://www.youtube.com/channel/UC123456789</uri>
-                    </author>
-                    <published>2023-05-26T12:00:00Z</published>
-                    <updated>2023-05-26T12:30:00Z</updated>
-                    <link rel="alternate" href="https://www.youtube.com/watch?v=ABC12345678"/>
-                </entry>
-            </feed>
+        // Sample JSON that mimics YouTube's Atom feed format
+        val sampleJson = """
+            {
+                "entry": {
+                    "id": "yt:video:ABC12345678",
+                    "title": "Test Video Title",
+                    "author": {
+                        "name": "Test Channel",
+                        "uri": "https://www.youtube.com/channel/UC123456789"
+                    },
+                    "published": "2023-05-26T12:00:00Z",
+                    "updated": "2023-05-26T12:30:00Z",
+                    "link": [
+                        {
+                            "rel": "alternate",
+                            "href": "https://www.youtube.com/watch?v=ABC12345678"
+                        }
+                    ]
+                }
+            }
         """.trimIndent()
 
-        // Test content notification with valid XML
+        // Test content notification with valid JSON
         val response = client.post("/pubsub/youtube") {
-            contentType(ContentType.Application.Xml)
-            setBody(sampleXml)
+            contentType(ContentType.Application.Json)
+            setBody(sampleJson)
         }
 
         Assert.assertEquals(response.status, HttpStatusCode.OK)
@@ -104,25 +97,23 @@ class RoutingTest {
         application {
             module()
         }
-        // Sample XML with missing title
-        val sampleXml = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <feed xmlns="http://www.w3.org/2005/Atom">
-                <entry>
-                    <id>yt:video:ABC12345678</id>
-                    <!-- Missing title -->
-                    <author>
-                        <name>Test Channel</name>
-                        <uri>https://www.youtube.com/channel/UC123456789</uri>
-                    </author>
-                </entry>
-            </feed>
+        // Sample JSON with missing title
+        val sampleJson = """
+            {
+                "entry": {
+                    "id": "yt:video:ABC12345678",
+                    "author": {
+                        "name": "Test Channel",
+                        "uri": "https://www.youtube.com/channel/UC123456789"
+                    }
+                }
+            }
         """.trimIndent()
 
         // Test content notification with missing title
         val response = client.post("/pubsub/youtube") {
-            contentType(ContentType.Application.Xml)
-            setBody(sampleXml)
+            contentType(ContentType.Application.Json)
+            setBody(sampleJson)
         }
 
         Assert.assertEquals(response.status, HttpStatusCode.BadRequest)
@@ -130,22 +121,21 @@ class RoutingTest {
     }
 
     @Test
-    fun testContentNotificationInvalidXml() = testApplication {
+    fun testContentNotificationInvalidJson() = testApplication {
         application {
             module()
         }
-        // Invalid XML
-        val invalidXml = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <invalid>
-                This is not a valid Atom feed
-            </invalid>
+        // Invalid JSON
+        val invalidJson = """
+            {
+                "invalid": "This is not a valid Atom feed"
+            }
         """.trimIndent()
 
-        // Test content notification with invalid XML
+        // Test content notification with invalid JSON
         val response = client.post("/pubsub/youtube") {
-            contentType(ContentType.Application.Xml)
-            setBody(invalidXml)
+            contentType(ContentType.Application.Json)
+            setBody(invalidJson)
         }
 
         Assert.assertEquals(response.status, HttpStatusCode.BadRequest)
@@ -157,25 +147,23 @@ class RoutingTest {
         application {
             module()
         }
-        // Sample XML with missing video ID
-        val sampleXml = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <feed xmlns="http://www.w3.org/2005/Atom">
-                <entry>
-                    <!-- Missing id -->
-                    <title>Test Video Title</title>
-                    <author>
-                        <name>Test Channel</name>
-                        <uri>https://www.youtube.com/channel/UC123456789</uri>
-                    </author>
-                </entry>
-            </feed>
+        // Sample JSON with missing video ID
+        val sampleJson = """
+            {
+                "entry": {
+                    "title": "Test Video Title",
+                    "author": {
+                        "name": "Test Channel",
+                        "uri": "https://www.youtube.com/channel/UC123456789"
+                    }
+                }
+            }
         """.trimIndent()
 
         // Test content notification with missing video ID
         val response = client.post("/pubsub/youtube") {
-            contentType(ContentType.Application.Xml)
-            setBody(sampleXml)
+            contentType(ContentType.Application.Json)
+            setBody(sampleJson)
         }
 
         Assert.assertEquals(response.status, HttpStatusCode.BadRequest)
@@ -187,25 +175,24 @@ class RoutingTest {
         application {
             module()
         }
-        // Sample XML with empty title
-        val sampleXml = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <feed xmlns="http://www.w3.org/2005/Atom">
-                <entry>
-                    <id>yt:video:ABC12345678</id>
-                    <title></title>
-                    <author>
-                        <name>Test Channel</name>
-                        <uri>https://www.youtube.com/channel/UC123456789</uri>
-                    </author>
-                </entry>
-            </feed>
+        // Sample JSON with empty title
+        val sampleJson = """
+            {
+                "entry": {
+                    "id": "yt:video:ABC12345678",
+                    "title": "",
+                    "author": {
+                        "name": "Test Channel",
+                        "uri": "https://www.youtube.com/channel/UC123456789"
+                    }
+                }
+            }
         """.trimIndent()
 
         // Test content notification with empty title
         val response = client.post("/pubsub/youtube") {
-            contentType(ContentType.Application.Xml)
-            setBody(sampleXml)
+            contentType(ContentType.Application.Json)
+            setBody(sampleJson)
         }
 
         Assert.assertEquals(response.status, HttpStatusCode.BadRequest)
@@ -217,18 +204,17 @@ class RoutingTest {
         application {
             module()
         }
-        // Sample XML with missing entry
-        val sampleXml = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <feed xmlns="http://www.w3.org/2005/Atom">
-                <!-- Missing entry element -->
-            </feed>
+        // Sample JSON with missing entry
+        val sampleJson = """
+            {
+                "feed": "Empty feed without entry"
+            }
         """.trimIndent()
 
         // Test content notification with missing entry
         val response = client.post("/pubsub/youtube") {
-            contentType(ContentType.Application.Xml)
-            setBody(sampleXml)
+            contentType(ContentType.Application.Json)
+            setBody(sampleJson)
         }
 
         Assert.assertEquals(response.status, HttpStatusCode.BadRequest)

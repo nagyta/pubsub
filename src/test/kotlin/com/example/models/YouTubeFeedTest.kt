@@ -1,70 +1,72 @@
 package com.example.models
 
-import org.testng.annotations.Test
-import org.testng.Assert
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule
+import org.testng.Assert
+import org.testng.annotations.Test
 
 /**
  * TestNG tests for the YouTube feed models.
- * Tests the parsing of YouTube's Atom XML feed format.
+ * Tests the parsing of YouTube's Atom feed format using JSON.
  */
 class YouTubeFeedTest {
 
-    private val xmlMapper: XmlMapper = createXmlMapper()
+    private val jsonMapper: ObjectMapper = createJsonMapper()
 
     /**
-     * Creates an XmlMapper with Kotlin support for testing.
+     * Creates a JSON ObjectMapper with Kotlin support for testing.
      * This is similar to the one used in the application.
      */
-    private fun createXmlMapper(): XmlMapper {
-        val xmlModule = JacksonXmlModule().apply {
-            setDefaultUseWrapper(false)
-        }
-        return XmlMapper(xmlModule).apply {
+    private fun createJsonMapper(): ObjectMapper {
+        return jacksonObjectMapper().apply {
             registerKotlinModule()
         }
     }
 
     @Test
     fun testParseAtomFeed() {
-        // Sample XML that mimics YouTube's Atom feed format
-        val sampleXml = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <feed xmlns="http://www.w3.org/2005/Atom">
-                <entry>
-                    <id>yt:video:ABC12345678</id>
-                    <title>Test Video Title</title>
-                    <author>
-                        <name>Test Channel</name>
-                        <uri>https://www.youtube.com/channel/UC123456789</uri>
-                    </author>
-                    <published>2023-05-26T12:00:00Z</published>
-                    <updated>2023-05-26T12:30:00Z</updated>
-                    <link rel="alternate" href="https://www.youtube.com/watch?v=ABC12345678"/>
-                </entry>
-            </feed>
+        // Sample JSON that mimics YouTube's Atom feed format
+        val sampleJson = """
+            {
+                "entry": {
+                    "id": "yt:video:ABC12345678",
+                    "title": "Test Video Title",
+                    "author": {
+                        "name": "Test Channel",
+                        "uri": "https://www.youtube.com/channel/UC123456789"
+                    },
+                    "published": "2023-05-26T12:00:00Z",
+                    "updated": "2023-05-26T12:30:00Z",
+                    "link": [
+                        {
+                            "rel": "alternate",
+                            "href": "https://www.youtube.com/watch?v=ABC12345678"
+                        }
+                    ]
+                }
+            }
         """.trimIndent()
 
-        // Parse the XML into our data classes
-        val feed = xmlMapper.readValue(sampleXml, AtomFeed::class.java)
+        // Parse the JSON into our data classes
+        val feed = jsonMapper.readValue<AtomFeed>(sampleJson)
 
         // Verify the parsed data
         Assert.assertNotNull(feed, "Feed should not be null")
         Assert.assertNotNull(feed.entry, "Entry should not be null")
-        
+
         val entry = feed.entry!!
         Assert.assertEquals(entry.id, "yt:video:ABC12345678", "Video ID should match")
         Assert.assertEquals(entry.title, "Test Video Title", "Title should match")
-        
+
         Assert.assertNotNull(entry.author, "Author should not be null")
         Assert.assertEquals(entry.author?.name, "Test Channel", "Channel name should match")
         Assert.assertEquals(entry.author?.uri, "https://www.youtube.com/channel/UC123456789", "Channel URI should match")
-        
+
         Assert.assertEquals(entry.published, "2023-05-26T12:00:00Z", "Published date should match")
         Assert.assertEquals(entry.updated, "2023-05-26T12:30:00Z", "Updated date should match")
-        
+
         Assert.assertNotNull(entry.links, "Links should not be null")
         Assert.assertEquals(entry.links?.size, 1, "Should have one link")
         Assert.assertEquals(entry.links?.get(0)?.rel, "alternate", "Link rel should be 'alternate'")
@@ -74,14 +76,13 @@ class YouTubeFeedTest {
     @Test
     fun testParseEmptyFeed() {
         // Test with an empty feed
-        val emptyXml = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <feed xmlns="http://www.w3.org/2005/Atom">
-            </feed>
+        val emptyJson = """
+            {
+            }
         """.trimIndent()
 
-        val feed = xmlMapper.readValue(emptyXml, AtomFeed::class.java)
-        
+        val feed = jsonMapper.readValue<AtomFeed>(emptyJson)
+
         Assert.assertNotNull(feed, "Feed should not be null even when empty")
         Assert.assertNull(feed.entry, "Entry should be null for empty feed")
     }
@@ -89,29 +90,25 @@ class YouTubeFeedTest {
     @Test
     fun testParsePartialFeed() {
         // Test with a partial feed (missing some fields)
-        val partialXml = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <feed xmlns="http://www.w3.org/2005/Atom">
-                <entry>
-                    <id>yt:video:XYZ98765432</id>
-                    <title>Partial Test Video</title>
-                    <!-- Missing author -->
-                    <!-- Missing published date -->
-                    <updated>2023-05-26T14:00:00Z</updated>
-                    <!-- Missing link -->
-                </entry>
-            </feed>
+        val partialJson = """
+            {
+                "entry": {
+                    "id": "yt:video:XYZ98765432",
+                    "title": "Partial Test Video",
+                    "updated": "2023-05-26T14:00:00Z"
+                }
+            }
         """.trimIndent()
 
-        val feed = xmlMapper.readValue(partialXml, AtomFeed::class.java)
-        
+        val feed = jsonMapper.readValue<AtomFeed>(partialJson)
+
         Assert.assertNotNull(feed, "Feed should not be null")
         Assert.assertNotNull(feed.entry, "Entry should not be null")
-        
+
         val entry = feed.entry!!
         Assert.assertEquals(entry.id, "yt:video:XYZ98765432", "Video ID should match")
         Assert.assertEquals(entry.title, "Partial Test Video", "Title should match")
-        
+
         Assert.assertNull(entry.author, "Author should be null")
         Assert.assertNull(entry.published, "Published date should be null")
         Assert.assertEquals(entry.updated, "2023-05-26T14:00:00Z", "Updated date should match")

@@ -1,62 +1,60 @@
 package com.example.models
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
+import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Data models for YouTube PubSubHubbub feed notifications.
- * These classes represent the XML structure that YouTube sends when a new video is published.
+ * These classes represent the JSON structure for handling video notifications.
  *
- * The YouTube PubSubHubbub notification system uses Atom XML format to deliver updates about new content.
+ * The YouTube PubSubHubbub notification system uses Atom format to deliver updates about new content.
  * When a channel publishes a new video, YouTube sends a notification to all subscribers with details about the video.
  *
  * Reference: https://pubsubhubbub.github.io/PubSubHubbub/pubsubhubbub-core-0.4.html
  * YouTube API documentation: https://developers.google.com/youtube/v3/guides/push_notifications
  */
 
-@JacksonXmlRootElement(localName = "feed", namespace = "http://www.w3.org/2005/Atom")
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class AtomFeed(
-    @JacksonXmlProperty(localName = "entry")
+    @JsonProperty("entry")
     val entry: Entry? = null
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class Entry(
-    @JacksonXmlProperty(localName = "id")
+    @JsonProperty("id")
     val id: String? = null,
 
-    @JacksonXmlProperty(localName = "title")
+    @JsonProperty("title")
     val title: String? = null,
 
-    @JacksonXmlProperty(localName = "author")
+    @JsonProperty("author")
     val author: Author? = null,
 
-    @JacksonXmlProperty(localName = "published")
+    @JsonProperty("published")
     val published: String? = null,
 
-    @JacksonXmlProperty(localName = "updated")
+    @JsonProperty("updated")
     val updated: String? = null,
 
-    @JacksonXmlProperty(localName = "link")
+    @JsonProperty("link")
     val links: List<Link>? = null
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class Author(
-    @JacksonXmlProperty(localName = "name")
+    @JsonProperty("name")
     val name: String? = null,
 
-    @JacksonXmlProperty(localName = "uri")
+    @JsonProperty("uri")
     val uri: String? = null
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class Link(
-    @JacksonXmlProperty(isAttribute = true, localName = "rel")
+    @JsonProperty("rel")
     val rel: String? = null,
 
-    @JacksonXmlProperty(isAttribute = true, localName = "href")
+    @JsonProperty("href")
     val href: String? = null
 )

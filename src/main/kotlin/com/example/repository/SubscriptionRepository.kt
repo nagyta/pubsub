@@ -4,12 +4,11 @@ import com.example.cacheService
 import com.example.models.Subscription
 import com.example.models.SubscriptionEntity
 import com.example.models.SubscriptionsTable
-import org.jetbrains.exposed.sql.Database
+import java.time.LocalDateTime
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
-import java.time.LocalDateTime
 
 /**
  * Repository for managing YouTube PubSubHubbub subscriptions in the database.
@@ -237,6 +236,65 @@ class SubscriptionRepository {
         } catch (e: Exception) {
             logger.error("Error updating subscription status for channel $channelId: ${e.message}", e)
             return false
+        }
+    }
+
+    /**
+     * Delete a subscription by channel ID.
+     * Updates the cache when a subscription is deleted.
+     *
+     * @param channelId The YouTube channel ID
+     * @return True if the subscription was deleted, false otherwise
+     */
+    fun deleteSubscription(channelId: String): Boolean {
+        try {
+            val deleted = transaction {
+                val subscription = SubscriptionEntity.find { 
+                    SubscriptionsTable.channelId eq channelId 
+                }.firstOrNull()
+
+                if (subscription != null) {
+                    subscription.delete()
+                    true
+                } else {
+                    false
+                }
+            }
+
+            if (deleted) {
+                // Remove the subscription from cache
+                cacheService.remove("subscriptions", "subscription:$channelId")
+                logger.debug("Removed subscription from cache: $channelId")
+
+                // Invalidate all_active_subscriptions cache since we've deleted a subscription
+                cacheService.remove("subscriptions", "all_active_subscriptions")
+                logger.debug("Invalidated all_active_subscriptions cache")
+            }
+
+            return deleted
+        } catch (e: Exception) {
+            logger.error("Error deleting subscription for channel $channelId: ${e.message}", e)
+            return false
+        }
+    }
+
+    /**
+     * Get all subscriptions, regardless of status.
+     * Uses caching to improve performance.
+     *
+     * @return List of all subscriptions
+     */
+    fun getAllSubscriptions(): List<Subscription> {
+        try {
+            // get from the database
+            val subscriptions = transaction {
+                SubscriptionEntity.all().map { it.toSubscription() }
+            }
+
+            return subscriptions
+        } catch (e: Exception) {
+            logger.error("Error getting all subscriptions: ${e.message}", e)
+            return emptyList()
         }
     }
 }
