@@ -11,7 +11,7 @@ package com.example.models
 data class SubscriptionRequest(
     val channelId: String,
     val topic: String = "https://www.youtube.com/feeds/videos.xml?channel_id=$channelId",
-    val callbackUrl: String = "http://pubsub.wernernagy.hu/pubsub/youtube",
+    val callbackUrl: String = System.getenv("CALLBACK_URL") ?: throw IllegalStateException("Missing CALLBACK_URL environment variable"),
     val leaseSeconds: Int = 3600,
 )
 

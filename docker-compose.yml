@@ -60,13 +60,9 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=guest
       - RABBITMQ_PASSWORD=guest
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=pubsub
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - CALLBACK_URL=http://pubsub.wernernagy.hu/pubsub/youtube
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -83,13 +79,9 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=guest
       - RABBITMQ_PASSWORD=guest
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=pubsub
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - CALLBACK_URL=http://pubsub.wernernagy.hu/pubsub/youtube
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -106,13 +98,9 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=guest
       - RABBITMQ_PASSWORD=guest
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=pubsub
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - CALLBACK_URL=http://pubsub.wernernagy.hu/pubsub/youtube
     depends_on:
       rabbitmq:
         condition: service_healthy

@@ -97,7 +97,7 @@ fun Application.configureSubscriptionRoutes() {
                     }
 
                     // Always use our fixed callback URL regardless of what was provided in the request
-                    val callbackUrl = "http://pubsub.wernernagy.hu/pubsub/youtube"
+                    val callbackUrl = System.getenv("CALLBACK_URL") ?: throw IllegalStateException("Missing CALLBACK_URL environment variable")
 
                     // Create or update the subscription in the database
                     val subscription = subscriptionRepository.createOrUpdateSubscription(
@@ -166,7 +166,7 @@ fun Application.configureSubscriptionRoutes() {
                     }
 
                     // Always use our fixed callback URL regardless of what was provided in the request
-                    val callbackUrl = "http://pubsub.wernernagy.hu/pubsub/youtube"
+                    val callbackUrl = System.getenv("CALLBACK_URL") ?: throw IllegalStateException("Missing CALLBACK_URL environment variable")
 
                     // Update the subscription
                     val subscription = subscriptionRepository.createOrUpdateSubscription(
