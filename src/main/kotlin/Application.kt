@@ -19,7 +19,6 @@ import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
-import org.jetbrains.exposed.sql.Database
 import org.koin.ktor.ext.get
 import org.koin.ktor.plugin.Koin
 import org.koin.logger.slf4jLogger
@@ -90,12 +89,7 @@ fun Application.module() {
 private fun Application.initDatabase() {
     logger.info("Initializing database connection")
 
-    // Connect to H2 database
-    val dbPath = System.getenv("H2_DB_PATH") ?: "./build/pubsub-db"
-    Database.connect(
-        url = "jdbc:h2:file:$dbPath;DB_CLOSE_DELAY=-1",
-        driver = "org.h2.Driver"
-    )
+    // MongoDB connection is handled in the MongoSubscriptionRepository
 
     // Get services from Koin
     val subscriptionRepository = get<ISubscriptionRepository>()
