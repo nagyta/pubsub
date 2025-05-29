@@ -60,8 +60,8 @@ fun Application.configurePubSubRoutes() {
                             // Example topic URL: https://www.youtube.com/xml/feeds/videos.xml?channel_id=UC_x5XG1OV2P6uZZ5FSM9Ttw
                             val channelId = hubTopic.substringAfter("channel_id=")
 
-                            // Store subscription in database
-                            val callbackUrl = "http://pubsub.wernernagy.hu/pubsub/youtube"
+                            // Store subscription in the database
+                            val callbackUrl = System.getenv("CALLBACK_URL") ?: throw IllegalStateException("Missing CALLBACK_URL environment variable")
                             subscriptionRepository.createOrUpdateSubscription(
                                 channelId = channelId,
                                 topic = hubTopic,

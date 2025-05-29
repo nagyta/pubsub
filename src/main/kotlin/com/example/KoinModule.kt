@@ -1,6 +1,6 @@
 package com.example
 
-import com.example.repository.SubscriptionRepository
+import com.example.repository.MongoSubscriptionRepository
 import com.example.repository.interfaces.ISubscriptionRepository
 import com.example.service.CacheService
 import com.example.service.NotificationConsumerService
@@ -41,7 +41,10 @@ val serviceModule = module {
  */
 val repositoryModule = module {
     // Subscription repository
-    single<ISubscriptionRepository> { SubscriptionRepository(get()) }
+    single<ISubscriptionRepository> { 
+        val mongoConnectionString = System.getenv("MONGODB_CONNECTION_STRING") ?: "mongodb+srv://nagyta01:rc1k1CiJpVnW80St@rsscluster.kqiw7.mongodb.net/?retryWrites=true&w=majority&appName=RssCluster"
+        MongoSubscriptionRepository(get(), mongoConnectionString) 
+    }
 }
 
 /**

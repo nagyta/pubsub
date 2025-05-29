@@ -94,7 +94,7 @@ class SubscriptionRepositoryTest {
         Assert.assertNotNull(dbSubscription, "Subscription should exist in the database")
         Assert.assertEquals(dbSubscription?.channelId, channelId, "Channel ID should match")
     }
-
+// curl -X POST http://localhost/api/subscriptions -H "Content-Type: application/json" -d '{"channelId": "UCW_zf7VdaFoeZqVTlYht4oA"}'
     /**
      * Test updating an existing subscription.
      */

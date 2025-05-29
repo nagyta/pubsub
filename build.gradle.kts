@@ -85,6 +85,9 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:0.46.0")
     implementation("org.jetbrains.exposed:exposed-java-time:0.46.0")
 
+    // MongoDB for subscription persistence
+    implementation("org.mongodb:mongodb-driver-kotlin-coroutine:4.10.1")
+
     // Message queue for notification queueing
     implementation("com.rabbitmq:amqp-client:5.20.0")
 
