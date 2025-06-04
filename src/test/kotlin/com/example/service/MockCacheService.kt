@@ -83,11 +83,11 @@ class MockCacheService : ICacheService {
      *
      * @return A map containing the current configuration
      */
-    override fun getConfiguration(): Map<String, Any> {
+    override fun getConfiguration(): Map<String, String> {
         return mapOf(
-            "enabled" to enabled,
-            "heapSize" to heapSize,
-            "ttlMinutes" to ttlMinutes
+            "enabled" to enabled.toString(),
+            "heapSize" to heapSize.toString(),
+            "ttlMinutes" to ttlMinutes.toString()
         )
     }
 
@@ -99,7 +99,7 @@ class MockCacheService : ICacheService {
      * @param ttlMinutes The time-to-live in minutes for cache entries
      * @return A map containing the updated configuration
      */
-    override fun updateConfiguration(enabled: Boolean, heapSize: Int, ttlMinutes: Int): Map<String, Any> {
+    override fun updateConfiguration(enabled: Boolean, heapSize: Int, ttlMinutes: Int): Map<String, String> {
         this.enabled = enabled
         this.heapSize = heapSize
         this.ttlMinutes = ttlMinutes

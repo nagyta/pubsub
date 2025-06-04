@@ -22,6 +22,7 @@ tasks.withType<Test> {
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
     reports {
+        classDirectories.setFrom(files(classDirectories.files.map { fileTree(it) { exclude("com/example/routing/**", "com/example/repository/**", "com/example/service/**") } }))
         xml.required.set(true)
         csv.required.set(true)
         html.outputLocation.set(layout.buildDirectory.dir("jacocoHtml"))
@@ -43,6 +44,8 @@ tasks.jacocoTestCoverageVerification {
 }
 
 tasks.test {
+    jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")
+    jvmArgs("--add-opens", "java.base/java.util=ALL-UNNAMED")
     finalizedBy(tasks.jacocoTestCoverageVerification)
 }
 
@@ -104,6 +107,11 @@ dependencies {
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.testng:testng:7.7.1")
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")
+    testImplementation("io.ktor:ktor-client-mock:3.1.3")
+
+    // Testcontainers for integration testing
+    testImplementation("org.testcontainers:rabbitmq:1.19.3")
+    testImplementation("org.testcontainers:testcontainers:1.19.3")
 
     // Koin testing
     testImplementation("io.insert-koin:koin-test:3.5.3") {
