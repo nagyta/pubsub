@@ -7,14 +7,21 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
+import org.koin.core.context.stopKoin
 import org.testng.Assert
 import org.testng.annotations.Test
+import org.testng.annotations.AfterMethod
 
 /**
  * TestNG tests for the application configuration.
  * Tests that the application is properly configured with the necessary plugins.
  */
 class ApplicationTest {
+
+    @AfterMethod
+    fun tearDown() {
+        stopKoin()
+    }
 
     @Test
     fun testApplicationConfiguration() = testApplication {
