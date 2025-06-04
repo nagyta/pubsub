@@ -14,6 +14,7 @@ import org.testcontainers.utility.DockerImageName
 class RabbitMQIntegrationTest {
     companion object {
         private val rabbitMQ = RabbitMQContainer(DockerImageName.parse("rabbitmq:3.12-management"))
+        private val oldEnv = mutableMapOf<String, String?>()
 
         @JvmStatic
         @BeforeClass
@@ -35,6 +36,7 @@ class RabbitMQIntegrationTest {
         @AfterClass
         fun tearDown() {
             rabbitMQ.stop()
+            restoreEnv()
         }
 
         private fun setEnv(key: String, value: String) {
@@ -44,7 +46,24 @@ class RabbitMQIntegrationTest {
             field.isAccessible = true
             @Suppress("UNCHECKED_CAST")
             val map = field.get(env) as MutableMap<String, String>
+            oldEnv.putIfAbsent(key, map[key])
             map[key] = value
+        }
+
+        private fun restoreEnv() {
+            val env = System.getenv()
+            val cl = env.javaClass
+            val field = cl.getDeclaredField("m")
+            field.isAccessible = true
+            @Suppress("UNCHECKED_CAST")
+            val map = field.get(env) as MutableMap<String, String>
+            oldEnv.forEach { (k, v) ->
+                if (v == null) {
+                    map.remove(k)
+                } else {
+                    map[k] = v
+                }
+            }
         }
     }
 
